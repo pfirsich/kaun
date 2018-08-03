@@ -10,9 +10,6 @@
 
 namespace kaun {
     template<typename T>
-    class VertexAttributeAssigner;
-
-    template<typename T>
     class VertexAttributeAccessor {
         static_assert(std::is_same<T, float>::value
                       || std::is_same<T, glm::vec2>::value
@@ -81,12 +78,6 @@ namespace kaun {
             assert(isValid());
             return setInternal(index, val);
         }
-
-        const T operator[](int index) const {
-            return get(index);
-        }
-
-        VertexAttributeAssigner<T> operator[](const int index);
     };
 
     template <typename T>
@@ -127,28 +118,6 @@ namespace kaun {
                 p[i] = static_cast<pT>(v);
             }
         }
-    }
-
-    template<typename T>
-    class VertexAttributeAssigner {
-    private:
-        VertexAttributeAccessor& mAccessor;
-        int mIndex;
-
-    public:
-        VertexAttributeAssigner(VertexAttributeAccessor& accessor, int index) :
-                mAccessor(accessor), mIndex(index) {}
-
-        template<typename T>
-        const T& operator=(const T& val) {
-            mAccessor.set(mIndex, val);
-            return val;
-        }
-    };
-
-    template<typename T>
-    VertexAttributeAssigner<T> VertexAttributeAccessor<T>::operator[](const int index) {
-        return VertexAttributeAssigner(*this, index);
     }
 
 	template<typename T>
