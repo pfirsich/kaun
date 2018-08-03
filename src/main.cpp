@@ -5,10 +5,12 @@
 int main(int argc, char** argv) {
     kaun::init();
 
-    kaun::setupWindow("Kaun Test", 800, 600);
+    kaun::WindowProperties props;
+    props.msaaSamples = 8;
+    kaun::setupWindow("Kaun Test", 1920, 1080, props);
 
-    kaun::setProjection(glm::perspective(90.0f, 800.0f/600.0f, 0.1f, 100.0f));
-    glViewport(0, 0, 800, 600);
+    kaun::setProjection(glm::perspective(90.0f, 1080.0f/1920.0f, 0.1f, 100.0f));
+    glViewport(0, 0, 1920, 1080);
 
     kaun::Transform cameraTransform;
     cameraTransform.lookAtPos(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, -1.0f));
@@ -27,20 +29,26 @@ int main(int argc, char** argv) {
 
     kaun::Transform meshTrafo;
 
-    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
     kaun::RenderState state;
     state.setCullFaces(kaun::RenderState::FaceDirections::NONE);
 
     bool quit = false;
     kaun::closeSignal.connect([&quit]() {quit = true;});
+    float lastTime = kaun::getTime();
     while(!quit) {
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        meshTrafo.rotate(1e-3f, glm::vec3(0.0f, 1.0f, 0.0f));
+        float t = kaun::getTime();
+        float dt = t - lastTime;
+        lastTime = t;
+
+        meshTrafo.rotate(dt, glm::vec3(0.0f, 1.0f, 0.0f));
+
         glm::mat4 modelMatrix = meshTrafo.getMatrix();
         glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
         glm::mat4 viewMatrix = glm::inverse(cameraTransform.getMatrix());
+        glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), 1920.0f/1080.0f, 0.1f, 100.0f);
 
         state.apply();
 

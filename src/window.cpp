@@ -193,7 +193,7 @@ namespace kaun {
         SDL_GL_SwapWindow(sdlWindow);
         #ifndef NDEBUG
             // We do this right after the buffer swap, because glGetError might
-            // trigger a flush, which will have happend in when swapping buffers anyway.
+            // trigger a flush, which will have happened when swapping buffers anyway.
             checkGLError();
         #endif
     }

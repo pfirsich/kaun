@@ -28,6 +28,7 @@ namespace kaun {
     void swapBuffers();
     void updateAndSwap();
     void cleanup();
+    float getTime();
     // glm::ivec2 getWindowSize()
     // getSdlWindowHandl, getSdlGlContext
     // saveScreenshot

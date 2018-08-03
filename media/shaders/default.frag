@@ -13,5 +13,6 @@ out vec4 fragColor;
 uniform sampler2D base;
 
 void main() {
-    fragColor = vec4(1.0, 0.0, 0.0, 1.0); //texture(base, vsOut.texCoord);
+    float NdotL = max(0.0, dot(vsOut.normal, normalize(vsOut.eye)));
+    fragColor = NdotL * vec4(1.0, 0.0, 0.0, 1.0); //texture(base, vsOut.texCoord);
 }

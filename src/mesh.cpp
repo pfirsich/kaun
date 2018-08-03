@@ -203,21 +203,11 @@ namespace kaun {
             }
         }
 
-        const float* p = reinterpret_cast<float*>(vData->getData());
-        for(int i = 0; i < vData->getSize() / sizeof(float); ++i) {
-            printf("%.2f  ", p[i]);
-            if(i % 8 == 7) printf("\n");
-        }
-
         IndexBuffer* iData = mesh->setIndexBuffer(vertexCount, 36);
         for(int side = 0; side < 6; ++side) {
             for(int vertex = 0; vertex < 6; ++vertex) {
                 iData->set(side*6+vertex, 4*side + indices[vertex]);
             }
-        }
-
-        for(int i = 0; i < 36; ++i) {
-            std::cout << iData->get(i) << std::endl;
         }
 
         //TODO: if(format.hasAttribute(AttributeType::TANGENT)) vData->calculateTangents();

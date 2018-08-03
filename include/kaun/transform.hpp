@@ -82,7 +82,7 @@ namespace kaun {
         // a little long, but still in the header, because I hope this gets inlined
         glm::mat4 getMatrix() const {
             if(mMatrixDirty) {
-                mMatrix = glm::scale(glm::translate(glm::mat4(), mPosition)
+                mMatrix = glm::scale(glm::translate(glm::mat4(1.0f), mPosition)
                     * glm::mat4_cast(glm::conjugate(mQuaternion)), mScale);
                 mMatrixDirty = false;
             }
