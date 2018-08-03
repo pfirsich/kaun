@@ -147,7 +147,7 @@ namespace kaun {
                 readIntegers<uint32_t>(index, buf);
                 break;
             case AttributeDataType::F32:
-                memcpy(buf, getPointer<float>(index), mAttr->num);
+                memcpy(buf, getPointer<float>(index), mAttr->num * sizeof(float));
                 break;
             case AttributeDataType::I2_10_10_10:
                 read2101010(*getPointer<uint32_t>(index), buf, true);
@@ -185,7 +185,7 @@ namespace kaun {
                 writeIntegers<uint32_t>(index, vals);
                 break;
             case AttributeDataType::F32:
-                memcpy(getPointer<float>(index), vals, mAttr->num);
+                memcpy(getPointer<float>(index), vals, mAttr->num * sizeof(float));
                 break;
             case AttributeDataType::I2_10_10_10:
                 write2101010(getPointer<uint32_t>(index), vals, true);
