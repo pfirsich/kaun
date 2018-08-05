@@ -125,6 +125,8 @@ namespace kaun {
         // Make sure this can be used to make a "line mesh"?
         static Mesh* plane(float width, float height, int segmentsX, int segmentsY, const VertexFormat& format);
 
+        static Mesh* objFile(const std::string& filename, const VertexFormat& format);
+
         ///////////////////////////////////////////////////////////////////////////
         /*
         circleMesh(int radius, int segments, const VertexFormat&format = defaultFormat);

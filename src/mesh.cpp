@@ -1,5 +1,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
 
 #include "mesh.hpp"
 
@@ -96,9 +100,11 @@ namespace kaun {
     }
 
     void Mesh::normalize(bool rescale) {
-        std::pair<glm::vec3, float> bSphere;
-        glm::mat4 t = glm::translate(glm::mat4(), glm::vec3(-bSphere.first.x, -bSphere.first.y, -bSphere.first.z));
+        std::pair<glm::vec3, float> bSphere = boundingSphere();
+        LOG_DEBUG("Mesh bounding sphere %s, %f", glm::to_string(bSphere.first).c_str(), bSphere.second);
+        glm::mat4 t(1.0);
         if(rescale) t = glm::scale(t, glm::vec3(1.0f / bSphere.second));
+        t = glm::translate(t, glm::vec3(-bSphere.first));
         transform(t);
     }
 
@@ -341,6 +347,95 @@ namespace kaun {
                 iData->set(index++, start);
             }
         }
+
+        return mesh;
+    }
+
+    struct objVertex {
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec2 texCoord;
+    };
+
+    Mesh* Mesh::objFile(const std::string& filename, const VertexFormat& format) {
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+
+        std::string err;
+        bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err,
+            filename.c_str(), nullptr, true);
+
+        if (ret) {
+            LOG_WARNING("Loading object file: %s", err.c_str());
+        } else {
+            LOG_ERROR("Error loading object file: %s", err.c_str());
+            return nullptr;
+        }
+
+        // Per-Face Materials are annoying and I am going to ignore them completely.
+        // If I wanted to respect them, I would have to bucket the faces by material, then
+        // build vertex/index buffers from them. This is annoying and slow.
+
+        std::vector<objVertex> vertices;
+        // loop shapes
+        for(size_t s = 0; s < shapes.size(); ++s) {
+            // loop faces
+            for(size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); ++f) {
+                assert(shapes[s].mesh.num_face_vertices[f] == 3);
+                bool missingNormal = true;
+                for(size_t v = 0; v < 3; ++v) {
+                    tinyobj::index_t idx = shapes[s].mesh.indices[f*3 + v];
+                    vertices.emplace_back();
+                    objVertex& vertex = vertices.back();
+                    vertex.position = glm::vec3(attrib.vertices[3*idx.vertex_index+0],
+                                                attrib.vertices[3*idx.vertex_index+1],
+                                                attrib.vertices[3*idx.vertex_index+2]);
+                    if(idx.normal_index >= 0) {
+                        vertex.normal = glm::vec3(attrib.normals[3*idx.normal_index+0],
+                                                  attrib.normals[3*idx.normal_index+1],
+                                                  attrib.normals[3*idx.normal_index+2]);
+                        missingNormal = false;
+                    }
+                    if(idx.texcoord_index >= 0) {
+                        vertex.texCoord = glm::vec2(attrib.texcoords[2*idx.texcoord_index+0],
+                                                    attrib.texcoords[2*idx.texcoord_index+1]);
+
+                    }
+                }
+
+                if(missingNormal) {
+                    glm::vec3& p1 = vertices[vertices.size() - 3].position;
+                    glm::vec3& p2 = vertices[vertices.size() - 2].position;
+                    glm::vec3& p3 = vertices[vertices.size() - 1].position;
+                    glm::vec3 rel21 = p1 - p2;
+                    glm::vec3 rel23 = p3 - p2;
+                    glm::vec3 normal = glm::normalize(glm::cross(rel23, rel21));
+                    for(size_t v = vertices.size() - 3; v < vertices.size(); ++v) {
+                        vertices[v].normal = normal;
+                    }
+                }
+            }
+        }
+
+        Mesh* mesh = new Mesh(Mesh::DrawMode::TRIANGLES);
+        VertexBuffer* vData = mesh->addVertexBuffer(format, vertices.size());
+
+        auto position = mesh->getAccessor<glm::vec3>(AttributeType::POSITION);
+        auto normal = mesh->getAccessor<glm::vec3>(AttributeType::NORMAL);
+        auto texCoord = mesh->getAccessor<glm::vec2>(AttributeType::TEXCOORD0);
+        assert(position.isValid() && normal.isValid());
+
+        for(size_t v = 0; v < vertices.size(); ++v) {
+            const objVertex& vertex = vertices[v];
+            position.set(v, vertex.position);
+            normal.set(v, vertex.normal);
+            if(texCoord.isValid()) {
+                texCoord.set(v, vertex.texCoord);
+            }
+        }
+
+        LOG_INFO("Loaded mesh '%s' (%d vertices, %d faces)", filename.c_str(), vertices.size(), vertices.size()/3);
 
         return mesh;
     }

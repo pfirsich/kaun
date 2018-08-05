@@ -13,3 +13,6 @@
 [submodule "dependencies/expected"]
 	path = dependencies/expected
 	url = https://github.com/TartanLlama/expected.git
+[submodule "dependencies/tinyobjloader"]
+	path = dependencies/tinyobjloader
+	url = https://github.com/syoyo/tinyobjloader

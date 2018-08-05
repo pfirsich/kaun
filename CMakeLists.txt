@@ -15,6 +15,8 @@ include_directories(dependencies/stb)
 
 include_directories(dependencies/expected/tl)
 
+include_directories(dependencies/tinyobjloader)
+
 add_subdirectory(dependencies/glad)
 include_directories(dependencies/glad/include)
 

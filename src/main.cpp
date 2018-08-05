@@ -13,13 +13,15 @@ int main(int argc, char** argv) {
     glViewport(0, 0, 800, 600);
 
     kaun::Transform cameraTransform;
-    cameraTransform.lookAtPos(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+    cameraTransform.lookAtPos(glm::vec3(0.0f, 0.0f, 4.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 
     kaun::Shader shader("media/shaders/default.frag", "media/shaders/default.vert");
     kaun::setShader(shader);
 
     //kaun::Mesh* mesh = kaun::Mesh::box(1.0f, 1.0f, 1.0f, kaun::defaultVertexFormat);
     //kaun::Mesh* mesh = kaun::Mesh::sphere(1.0f, 32, 12, false, kaun::defaultVertexFormat);
+    kaun::Mesh* mesh = kaun::Mesh::objFile("media/teapot.obj", kaun::defaultVertexFormat);
+    mesh->normalize(true);
     kaun::Transform meshTrafo;
 
     kaun::Texture tex = kaun::Texture("media/default.png");
@@ -42,6 +44,7 @@ int main(int argc, char** argv) {
     kaun::closeSignal.connect([&quit]() {quit = true;});
     float lastTime = kaun::getTime();
     while(!quit) {
+        glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         float t = kaun::getTime();
