@@ -83,30 +83,30 @@ namespace kaun {
                         mFrontFace(FaceOrientation::CCW), mBlendEnabled(false), mBlendSrcFactor(BlendFactor::ONE),
                         mBlendDstFactor(BlendFactor::ZERO), mBlendEquation(BlendEq::ADD) {}
 
-        bool getDepthWrite() const {return mDepthWrite;}
-        void setDepthWrite(bool write) {mDepthWrite = write;}
+        bool getDepthWrite() const { return mDepthWrite; }
+        void setDepthWrite(bool write) { mDepthWrite = write; }
 
-        DepthFunc getDepthTest() const {return mDepthFunc;}
-        void setDepthTest(DepthFunc func = DepthFunc::LEQUAL) {mDepthFunc = func;}
+        DepthFunc getDepthTest() const { return mDepthFunc; }
+        void setDepthTest(DepthFunc func = DepthFunc::LEQUAL) { mDepthFunc = func; }
 
-        FaceDirections getCullFaces() const {return mCullFaces;}
-        void setCullFaces(FaceDirections dirs = FaceDirections::BACK) {mCullFaces = dirs;}
+        FaceDirections getCullFaces() const { return mCullFaces; }
+        void setCullFaces(FaceDirections dirs = FaceDirections::BACK) { mCullFaces = dirs; }
 
-        FaceOrientation getFrontFace() const {return mFrontFace;}
-        void setFrontFace(FaceOrientation ori) {mFrontFace = ori;}
+        FaceOrientation getFrontFace() const { return mFrontFace; }
+        void setFrontFace(FaceOrientation ori) { mFrontFace = ori; }
 
         // http://www.andersriggelsen.dk/glblendfunc.php
-        bool getBlendEnabled() const {return mBlendEnabled;}
-        void setBlendEnabled(bool blend) {mBlendEnabled = blend;}
+        bool getBlendEnabled() const { return mBlendEnabled; }
+        void setBlendEnabled(bool blend) { mBlendEnabled = blend; }
 
-        std::pair<BlendFactor, BlendFactor> getBlendFactors() const {return std::make_pair(mBlendSrcFactor, mBlendDstFactor);}
-        void setBlendFactors(BlendFactor src, BlendFactor dst) {mBlendSrcFactor = src; mBlendDstFactor = dst;}
-        void setBlendFactors(std::pair<BlendFactor, BlendFactor> factors) {setBlendFactors(factors.first, factors.second);}
-        void setBlendSrcFactor(BlendFactor src) {mBlendSrcFactor = src;}
-        void setBlendDstFactor(BlendFactor dst) {mBlendDstFactor = dst;}
+        std::pair<BlendFactor, BlendFactor> getBlendFactors() const { return std::make_pair(mBlendSrcFactor, mBlendDstFactor); }
+        void setBlendFactors(BlendFactor src, BlendFactor dst) { mBlendSrcFactor = src; mBlendDstFactor = dst; }
+        void setBlendFactors(std::pair<BlendFactor, BlendFactor> factors) { setBlendFactors(factors.first, factors.second); }
+        void setBlendSrcFactor(BlendFactor src) { mBlendSrcFactor = src; }
+        void setBlendDstFactor(BlendFactor dst) { mBlendDstFactor = dst; }
 
-        BlendEq getBlendEquation() const {return mBlendEquation;}
-        void setBlendEquation(BlendEq eq) {mBlendEquation = eq;}
+        BlendEq getBlendEquation() const { return mBlendEquation; }
+        void setBlendEquation(BlendEq eq) { mBlendEquation = eq; }
 
         void apply(bool force = false) const;
 

@@ -8,6 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "log.hpp"
+#include "texture.hpp"
 
 namespace kaun {
     class Shader {
@@ -89,10 +90,10 @@ namespace kaun {
 
         Status getStatus() const { return mStatus; }
 
-        template<typename... T>
-        void setUniform(const std::string& name, T... args) const {
+        template<typename... Args>
+        void setUniform(const std::string& name, Args&&... args) const {
             UniformLocation loc = getUniformLocation(name);
-            if(loc != -1) setUniform(loc, args...);
+            if(loc != -1) setUniform(loc, std::forward<Args>(args)...);
         }
 
         void setUniform(UniformLocation loc, int value) const {
@@ -159,11 +160,16 @@ namespace kaun {
             bind(); glUniformMatrix4fv(loc, count, GL_FALSE, glm::value_ptr(*vals));
         }
 
-/*        void setUniform(UniformLocation loc, const Texture& tex) const {
+        void setUniform(UniformLocation loc, const Texture& tex) const {
             bind();
             int unit = tex.bind();
-            //LOG_DEBUG("bind texture %d to %d and write unit to uniform location %d", tex.getTextureObject(), unit, loc);
             glUniform1i(loc, unit);
-        }*/
+        }
+
+        void setUniform(UniformLocation loc, const Texture& tex, int unit) const {
+            bind();
+            tex.bind(unit);
+            glUniform1i(loc, unit);
+        }
     };
 }

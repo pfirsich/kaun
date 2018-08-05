@@ -14,5 +14,5 @@ uniform sampler2D base;
 
 void main() {
     float NdotL = max(0.0, dot(vsOut.normal, normalize(vsOut.eye)));
-    fragColor = NdotL * vec4(1.0, 0.0, 0.0, 1.0); //texture(base, vsOut.texCoord);
+    fragColor = NdotL * texture(base, vsOut.texCoord);
 }

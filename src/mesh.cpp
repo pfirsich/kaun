@@ -125,7 +125,7 @@ namespace kaun {
     }
 
     // width, height, depth along x, y, z, center is 0, 0, 0
-    Mesh* boxMesh(float width, float height, float depth, const VertexFormat& format) {
+    Mesh* Mesh::box(float width, float height, float depth, const VertexFormat& format) {
         static float vertices[] = {
             // +z
             -1.0f,  1.0f,  1.0f,
@@ -152,21 +152,21 @@ namespace kaun {
             -1.0f,  1.0f,  1.0f,
 
             // +y
-             1.0f,  1.0f, -1.0f,
             -1.0f,  1.0f, -1.0f,
             -1.0f,  1.0f,  1.0f,
              1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f, -1.0f,
 
             // -y
+            -1.0f, -1.0f,  1.0f,
             -1.0f, -1.0f, -1.0f,
              1.0f, -1.0f, -1.0f,
-             1.0f, -1.0f,  1.0f,
-            -1.0f, -1.0f,  1.0f
+             1.0f, -1.0f,  1.0f
         };
 
         static uint8_t indices[6] = {
-            0, 1, 3,
-            3, 1, 2
+            0, 1, 2,
+            0, 2, 3
         };
 
         static float normals[6][3] = {
@@ -211,6 +211,136 @@ namespace kaun {
         }
 
         //TODO: if(format.hasAttribute(AttributeType::TANGENT)) vData->calculateTangents();
+
+        return mesh;
+    }
+
+    // Stacks represents the subdivision on the y axis (excluding the poles)
+    Mesh* Mesh::sphere(float radius, int slices, int stacks, bool cubeProjectionTexCoords, const VertexFormat& format) {
+        assert(slices > 3 && stacks > 2);
+        Mesh* mesh = new Mesh(Mesh::DrawMode::TRIANGLES);
+        size_t vertexCount = slices*stacks;
+        mesh->addVertexBuffer(format, vertexCount);
+
+        auto position = mesh->getAccessor<glm::vec3>(AttributeType::POSITION);
+        auto normal = mesh->getAccessor<glm::vec3>(AttributeType::NORMAL);
+        auto texCoord = mesh->getAccessor<glm::vec2>(AttributeType::TEXCOORD0);
+
+        /* This should probably be:
+        auto normal = VertexAttributeAccessor();
+        if(format.hasAttribute(AttributeType::NORMAL)) {
+            normal = (*vData)[AttributeType::NORMAL];
+        }
+
+        That way there will not be a debug log message every time you create a sphere mesh,
+        but I did it like this to show that it's possible to do it like this without everything going up in flames
+         */
+
+        int index = 0;
+        for(int stack = 0; stack < stacks; ++stack) {
+            float stackAngle = glm::pi<float>() / (stacks - 1) * stack;
+            float xzRadius = glm::sin(stackAngle) * radius;
+            float y = glm::cos(stackAngle) * radius;
+            for(int slice = 0; slice < slices; ++slice) {
+                float sliceAngle = 2.0f * glm::pi<float>() / (slices - 1) * slice;
+                position.set(index, glm::vec3(glm::cos(sliceAngle) * xzRadius, y, glm::sin(sliceAngle) * xzRadius));
+                normal.set(index, glm::normalize(position.get(index)));
+                if(cubeProjectionTexCoords) {
+                    // http://www.gamedev.net/topic/443878-texture-lookup-in-cube-map/
+                    glm::vec3 dir = normal.get(index);
+                    glm::vec3 absDir = glm::abs(dir);
+                    int majorDirIndex = 0;
+                    if(absDir.x >= absDir.y && absDir.x >= absDir.z) majorDirIndex = 0;
+                    if(absDir.y >= absDir.x && absDir.y >= absDir.z) majorDirIndex = 1;
+                    if(absDir.z >= absDir.x && absDir.z >= absDir.y) majorDirIndex = 2;
+                    float majorDirSign = 1.0f;
+                    if(dir[majorDirIndex] < 0.0f) majorDirSign = -1.0f;
+
+                    glm::vec3 v;
+                    switch(majorDirIndex) {
+                        case 0:
+                            v = glm::vec3(-majorDirSign * dir.z, -dir.y, dir.x);
+                            break;
+                        case 1:
+                            v = glm::vec3(dir.x, majorDirSign * dir.z, dir.y);
+                            break;
+                        case 2:
+                            v = glm::vec3(majorDirSign * dir.x, -dir.y, dir.z);
+                            break;
+                        default:
+                            assert(false);
+                            break;
+                    }
+
+                    texCoord.set(index++, glm::vec2((v.x/glm::abs(v.z) + 1.0f) / 2.0f, (v.y/glm::abs(v.z) + 1.0f) / 2.0f));
+                } else {
+                    texCoord.set(index++, glm::vec2(sliceAngle / 2.0f / glm::pi<float>(), stackAngle / glm::pi<float>()));
+                }
+            }
+        }
+
+        int triangles = 2 * (slices - 1) * (stacks - 1);
+
+        IndexBuffer* iData = mesh->setIndexBuffer(vertexCount, triangles * 3);
+        index = 0;
+        for(int stack = 0; stack < stacks - 1; ++stack) {
+            int firstStackVertex = stack * slices;
+            for(int slice = 0; slice < slices - 1; ++slice) {
+                int firstFaceVertex = firstStackVertex + slice;
+                int nextVertex = firstFaceVertex + 1;
+                iData->set(index++, nextVertex + slices);
+                iData->set(index++, firstFaceVertex + slices);
+                iData->set(index++, firstFaceVertex);
+
+                iData->set(index++, nextVertex);
+                iData->set(index++, nextVertex + slices);
+                iData->set(index++, firstFaceVertex);
+            }
+        }
+
+        //if(format.hasAttribute(AttributeType::TANGENT)) vData->calculateTangents();
+
+        return mesh;
+    }
+
+    Mesh* Mesh::plane(float width, float height, int segmentsX, int segmentsY, const VertexFormat& format) {
+        assert(segmentsX >= 1 && segmentsY >= 1);
+
+        Mesh* mesh = new Mesh(Mesh::DrawMode::TRIANGLES);
+        size_t vertexCount = (segmentsX+1)*(segmentsY+1);
+        mesh->addVertexBuffer(format, vertexCount);
+
+        auto position = mesh->getAccessor<glm::vec3>(AttributeType::POSITION);
+        auto normal = mesh->getAccessor<glm::vec3>(AttributeType::NORMAL);
+        auto texCoord = mesh->getAccessor<glm::vec2>(AttributeType::TEXCOORD0);
+
+        int index = 0;
+        glm::vec2 size(width, height);
+        for(int y = 0; y <= segmentsY; ++y) {
+            for(int x = 0; x <= segmentsX; ++x) {
+                glm::vec2 pos2D = glm::vec2((float)x / segmentsX, (float)y / segmentsY);
+                texCoord.set(index, pos2D);
+                pos2D = pos2D * size - 0.5f * size;
+                position.set(index, glm::vec3(pos2D.x, 0.0f, pos2D.y));
+                normal.set(index++, glm::vec3(0.0f, 1.0f, 0.0f));
+            }
+        }
+
+        IndexBuffer* iData = mesh->setIndexBuffer(vertexCount, segmentsX*segmentsY*2*3);
+        index = 0;
+        int perLine = segmentsX + 1;
+        for(int y = 0; y < segmentsY; ++y) {
+            for(int x = 0; x < segmentsX; ++x) {
+                int start = x + y * perLine;
+                iData->set(index++, start);
+                iData->set(index++, start + perLine);
+                iData->set(index++, start + perLine + 1);
+
+                iData->set(index++, start + perLine + 1);
+                iData->set(index++, start + 1);
+                iData->set(index++, start);
+            }
+        }
 
         return mesh;
     }

@@ -59,7 +59,7 @@ include_directories(include/kaun)
 add_compile_definitions(NOMINMAX)
 set(KAUN_SOURCE src/log.cpp src/mesh.cpp src/mesh_buffers.cpp src/mesh_vertexaccessor.cpp
     src/mesh_vertexformat.cpp src/render.cpp src/renderstate.cpp src/shader.cpp
-    src/transform.cpp src/utility.cpp src/window.cpp src/kaun.cpp)
+    src/texture.cpp src/transform.cpp src/utility.cpp src/window.cpp src/kaun.cpp)
 add_library(kaun ${KAUN_SOURCE})
 target_link_libraries(kaun SDL2main SDL2 glad)
 add_executable(kauntest src/main.cpp)

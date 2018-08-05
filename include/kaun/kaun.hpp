@@ -12,6 +12,7 @@
 #include "renderstate.hpp"
 #include "shader.hpp"
 #include "utility.hpp"
+#include "texture.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

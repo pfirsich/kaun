@@ -114,27 +114,30 @@ namespace kaun {
 
         // position and radius
         std::pair<glm::vec3, float> boundingSphere() const;
+
+
+        // width, height, depth along x, y, z, center is 0, 0, 0
+        static Mesh* box(float width, float height, float depth, const VertexFormat& format);
+
+        // Stacks represents the number of elements on the y axis
+        static Mesh* sphere(float radius, int slices, int stacks, bool cubeProjectionTexCoords, const VertexFormat& format);
+
+        // Make sure this can be used to make a "line mesh"?
+        static Mesh* plane(float width, float height, int segmentsX, int segmentsY, const VertexFormat& format);
+
+        ///////////////////////////////////////////////////////////////////////////
+        /*
+        circleMesh(int radius, int segments, const VertexFormat&format = defaultFormat);
+        cylinderMesh(radiusTop, radiusBottom) -> Cylinder
+        subdivide(Mesh, iterations) // http://answers.unity3d.com/questions/259127/does-anyone-have-any-code-to-subdivide-a-mesh-and.html like this
+        normalsMesh - generates normals from another VertexBuffer - maybe GL_LINES or actual arrows?
+        gridMesh
+        frustumMesh - from camera/any perspective matrix, inverts is and converts ndc - corners
+        coordinateSystem
+
+        // A Helper class or something for ribbons/extruded geometry (takes a shape, that's appended and maybe a radius (animated over time))
+        */
     };
 
-    // width, height, depth along x, y, z, center is 0, 0, 0
-    Mesh* boxMesh(float width, float height, float depth, const VertexFormat& format);
 
-    // Stacks represents the number of elements on the y axis
-    Mesh* sphereMesh(float radius, int slices, int stacks, bool cubeProjectionTexCoords, const VertexFormat& format);
-
-    // Make sure this can be used to make a "line mesh"?
-    Mesh* planeMesh(float width, float height, int segmentsX, int segmentsY, const VertexFormat& format);
-
-    ///////////////////////////////////////////////////////////////////////////
-    /*
-    circleMesh(int radius, int segments, const VertexFormat&format = defaultFormat);
-    cylinderMesh(radiusTop, radiusBottom) -> Cylinder
-    subdivide(Mesh, iterations) // http://answers.unity3d.com/questions/259127/does-anyone-have-any-code-to-subdivide-a-mesh-and.html like this
-    normalsMesh - generates normals from another VertexBuffer - maybe GL_LINES or actual arrows?
-    gridMesh
-    frustumMesh - from camera/any perspective matrix, inverts is and converts ndc - corners
-    coordinateSystem
-
-    // A Helper class or something for ribbons/extruded geometry (takes a shape, that's appended and maybe a radius (animated over time))
-    */
 }
