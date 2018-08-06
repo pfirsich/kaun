@@ -73,4 +73,6 @@ namespace kaun {
         // returns *this, so you can chain them
         VertexFormat& add(AttributeType attrType, int num, AttributeDataType dataType, bool normalized = false, unsigned int divisor = 0);
     };
+
+    extern VertexFormat defaultVertexFormat;
 }

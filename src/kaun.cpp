@@ -2,6 +2,7 @@
 
 namespace kaun {
     VertexFormat defaultVertexFormat;
+    RenderState defaultRenderState;
 
     void init() {
         setupDefaultLogging();

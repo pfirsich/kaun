@@ -9,6 +9,7 @@
 #include "mesh.hpp"
 #include "renderstate.hpp"
 #include "renderattachment.hpp"
+#include "uniform.hpp"
 
 namespace kaun {
     extern void setRenderTarget(const std::vector<const RenderAttachment*>& colorAttachments = {},
@@ -19,11 +20,15 @@ namespace kaun {
     extern void setViewport(const glm::ivec4& viewport);
 
     extern void setProjection(const glm::mat4& matrix);
+    extern void setViewMatrix(const glm::mat4& viewTransform);
     extern void setViewTransform(const Transform& viewTransform);
+    extern void setModelMatrix(const glm::mat4& modelTransform);
     extern void setModelTransform(const Transform& modelTransform);
 
-    //extern void draw(Mesh& mesh, Shader& shader, const std::map<Uniform>& uniforms = {},
-    //                 const RenderState& state = defaultRenderState);
+    // This is a map of uniforms, because I want it to be similar to the Lua API
+    // http://supercomputingblog.com/windows/ordered-map-vs-unordered-map-a-performance-study/
+    extern void draw(Mesh& mesh, Shader& shader, const std::vector<Uniform>& uniforms,
+                     const RenderState& state = defaultRenderState);
 
     extern void flush(/*sortFunction - pointer/enum?*/);
 }

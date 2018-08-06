@@ -177,6 +177,14 @@ namespace kaun {
         return glm::ivec2(w, h);
     }
 
+    int getWindowWidth() {
+        return getWindowSize().x;
+    }
+
+    int getWindowHeight() {
+        return getWindowSize().y;
+    }
+
     void update() {
         SDL_Event e;
         while(SDL_PollEvent(&e) != 0) {

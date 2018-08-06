@@ -24,7 +24,6 @@ namespace kaun {
 
         using UniformLocation = GLint;
 
-
     private:
         GLuint mProgramObject;
         std::vector<GLuint> mShaderObjects;

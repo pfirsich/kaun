@@ -113,4 +113,6 @@ namespace kaun {
         // stencil func - glStencilFunc
         // stencil op - glStencilOp
     };
+
+    extern RenderState defaultRenderState;
 }

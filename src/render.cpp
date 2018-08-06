@@ -181,16 +181,16 @@ namespace kaun {
     glm::mat4 projectionMatrix;
     glm::mat4 viewMatrix;
     glm::mat4 modelMatrix;
-    glm::mat4 normalMatrix;
+    glm::mat3 normalMatrix;
 
     struct RenderQueueEntry {
-        Shader* shader;
-        //std::vector<Uniform> uniforms;
         Mesh* mesh;
+        Shader* shader;
+        std::vector<Uniform> uniforms;
         RenderState renderState;
 
-        RenderQueueEntry(Shader* shader, Mesh* mesh, const RenderState& renderState) :
-                shader(shader), mesh(mesh), renderState(renderState) {}
+        RenderQueueEntry(Mesh* mesh, Shader* shader, const RenderState& renderState) :
+                mesh(mesh), shader(shader), renderState(renderState) {}
     };
 
     std::vector<RenderQueueEntry> renderQueue;
@@ -199,23 +199,52 @@ namespace kaun {
         projectionMatrix = matrix;
     }
 
+    void setViewMatrix(const glm::mat4 view) {
+        viewMatrix = view;
+    }
+
     void setViewTransform(const Transform& viewTransform) {
         viewMatrix = glm::inverse(viewTransform.getMatrix());
     }
 
-    void setModelTransform(const Transform& modelTransform) {
-        modelMatrix = modelTransform.getMatrix();
-        normalMatrix = glm::mat3(glm::transpose(glm::inverse(modelMatrix)));
+    void setModelMatrix(const glm::mat4& model) {
+        modelMatrix = model;
+        normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
     }
 
-    void draw(Mesh& mesh) {
-		//renderQueue.emplace_back(currentShader, &mesh, currentRenderState);
-		//RenderQueueEntry& entry = renderQueue.back();
-        // set up entry.uniforms
-        //mesh.setMutable(false);
+    void setModelTransform(const Transform& modelTransform) {
+        setModelMatrix(modelTransform.getMatrix());
+    }
+
+    void draw(Mesh& mesh, Shader& shader, const std::vector<Uniform>& uniforms, const RenderState& state) {
+		renderQueue.emplace_back(&mesh, &shader, state);
+		RenderQueueEntry& entry = renderQueue.back();
+        entry.uniforms = uniforms;
+        //entry.uniforms.emplace_back("kaun_viewport", viewport);
+        entry.uniforms.emplace_back("kaun_view", viewMatrix);
+        //entry.uniforms.emplace_back("kaun_invView", );
+        entry.uniforms.emplace_back("kaun_projection", projectionMatrix);
+        //entry.uniforms.emplace_back("kaun_invProjection", );
+        //entry.uniforms.emplace_back("kaun_viewProjection", );
+        //entry.uniforms.emplace_back("kaun_invViewProjection", );
+        entry.uniforms.emplace_back("kaun_model", modelMatrix);
+        entry.uniforms.emplace_back("kaun_normal", normalMatrix);
+        //entry.uniforms.emplace_back("kaun_modelView", );
+        //entry.uniforms.emplace_back("kaun_modelViewProjection", );
     }
 
     void flush() {
-
+        // sort here!
+        for(auto& entry : renderQueue) {
+            entry.renderState.apply();
+            entry.shader->bind();
+            Texture::markAllUnitsAvailable();
+            for(auto& uniform : entry.uniforms) {
+                Shader::UniformLocation loc = entry.shader->getUniformLocation(uniform.getName());
+                if(loc != -1) uniform.set(loc);
+            }
+            entry.mesh->draw();
+        }
+        renderQueue.clear();
     }
 }

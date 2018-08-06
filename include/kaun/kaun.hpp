@@ -18,7 +18,5 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace kaun {
-    extern VertexFormat defaultVertexFormat;
-
     void init();
 }
