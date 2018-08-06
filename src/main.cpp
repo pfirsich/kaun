@@ -9,14 +9,20 @@ int main(int argc, char** argv) {
     props.msaaSamples = 8;
     kaun::setupWindow("Kaun Test", 800, 600, props);
 
-    kaun::setProjection(glm::perspective(90.0f, 600.0f/800.0f, 0.1f, 100.0f));
-    glViewport(0, 0, 800, 600);
+    glm::mat4 projectionMatrix;
+    kaun::resizeSignal.connect([&projectionMatrix](int w, int h) {
+        projectionMatrix = glm::perspective(glm::radians(45.0f),
+            static_cast<float>(w)/h, 0.1f, 100.0f);
+        kaun::setProjection(projectionMatrix);
+        kaun::setViewport(0, 0, w, h);
+	});
+    auto size = kaun::getWindowSize();
+    kaun::resizeSignal.emit(size.x, size.y);
 
     kaun::Transform cameraTransform;
     cameraTransform.lookAtPos(glm::vec3(0.0f, 0.0f, 4.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 
     kaun::Shader shader("media/shaders/default.frag", "media/shaders/default.vert");
-    kaun::setShader(shader);
 
     //kaun::Mesh* mesh = kaun::Mesh::box(1.0f, 1.0f, 1.0f, kaun::defaultVertexFormat);
     //kaun::Mesh* mesh = kaun::Mesh::sphere(1.0f, 32, 12, false, kaun::defaultVertexFormat);
@@ -28,24 +34,20 @@ int main(int argc, char** argv) {
     //kaun::Texture* tex = kaun::Texture::checkerBoard(16, 16, 2);
     //kaun::Texture* tex = kaun::Texture::pixel(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
 
-    // kaun::RenderTarget::backBuffer.setClearColor(0.5f, 0.5f, 0.5f);
-
-    // kaun::setRenderTarget(kaun::RenderTarget::backBuffer); // set by default
-
     // kaun::setRenderState(...) // default state is set from the start
 
     kaun::RenderState state;
     //state.setCullFaces(kaun::RenderState::FaceDirections::NONE);
     //state.setFrontFace(kaun::RenderState::FaceOrientation::CCW);
 
-    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
     bool quit = false;
     kaun::closeSignal.connect([&quit]() {quit = true;});
     float lastTime = kaun::getTime();
     while(!quit) {
-        glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        kaun::setRenderTarget();
+        kaun::clear(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+        kaun::clearDepth();
 
         float t = kaun::getTime();
         float dt = t - lastTime;

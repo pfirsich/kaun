@@ -171,6 +171,12 @@ namespace kaun {
         return true;
     }
 
+    glm::ivec2 getWindowSize() {
+        int w, h;
+        SDL_GetWindowSize(sdlWindow, &w, &h);
+        return glm::ivec2(w, h);
+    }
+
     void update() {
         SDL_Event e;
         while(SDL_PollEvent(&e) != 0) {

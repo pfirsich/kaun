@@ -7,45 +7,23 @@
 #include "transform.hpp"
 #include "shader.hpp"
 #include "mesh.hpp"
-#include "uniform.hpp"
-#include "rendertarget.hpp"
 #include "renderstate.hpp"
+#include "renderattachment.hpp"
 
 namespace kaun {
+    extern void setRenderTarget(const std::vector<const RenderAttachment*>& colorAttachments = {},
+                                const RenderAttachment* depthStencil = nullptr);
+    extern void clear(const glm::vec4& color = glm::vec4(0.0f), int colorAttachmentIndex = 0);
+    extern void clearDepth(float value = 1.0f);
+    extern void setViewport(int x, int y, int w, int h);
+    extern void setViewport(const glm::ivec4& viewport);
+
     extern void setProjection(const glm::mat4& matrix);
     extern void setViewTransform(const Transform& viewTransform);
     extern void setModelTransform(const Transform& modelTransform);
 
-    //extern void setRenderTarget(RenderTarget& renderTarget);
-    extern void getRenderState(RenderState& state);
-    extern void setRenderState(RenderState& state);
-    extern void setShader(Shader& shader);
+    //extern void draw(Mesh& mesh, Shader& shader, const std::map<Uniform>& uniforms = {},
+    //                 const RenderState& state = defaultRenderState);
 
-    extern void setUniform(const std::string& name, float val);
-    extern void setUniform(const std::string& name, const float* vals, size_t count = 1);
-
-    extern void setUniform(const std::string& name, int val);
-    extern void setUniform(const std::string& name, const int* vals, size_t count = 1);
-
-    extern void setUniform(const std::string& name, const glm::vec2& val);
-    extern void setUniform(const std::string& name, const glm::vec2* vals, size_t count = 1);
-
-    extern void setUniform(const std::string& name, const glm::vec3& val);
-    extern void setUniform(const std::string& name, const glm::vec3* vals, size_t count = 1);
-
-    extern void setUniform(const std::string& name, const glm::vec4& val);
-    extern void setUniform(const std::string& name, const glm::vec4* vals, size_t count = 1);
-
-    extern void setUniform(const std::string& name, const glm::mat2& val);
-    extern void setUniform(const std::string& name, const glm::mat2* vals, size_t count = 1);
-
-    extern void setUniform(const std::string& name, const glm::mat3& val);
-    extern void setUniform(const std::string& name, const glm::mat3* vals, size_t count = 1);
-
-    extern void setUniform(const std::string& name, const glm::mat4& val);
-    extern void setUniform(const std::string& name, const glm::mat4* vals, size_t count = 1);
-
-    extern void draw(Mesh& mesh);
-
-    extern void flush();
+    extern void flush(/*sortFunction - pointer/enum?*/);
 }

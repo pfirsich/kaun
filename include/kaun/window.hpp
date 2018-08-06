@@ -24,6 +24,7 @@ namespace kaun {
 
     // returns success
     bool setupWindow(const char* title, int width, int height, const WindowProperties& props = WindowProperties());
+    glm::ivec2 getWindowSize();
     void update();
     void swapBuffers();
     void updateAndSwap();

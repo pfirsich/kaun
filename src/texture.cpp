@@ -45,6 +45,8 @@ namespace kaun {
         if(mTextureObject == 0) glGenTextures(1, &mTextureObject);
         bind(0);
 
+        GLint internalFormatMap[4] = {GL_R8, GL_RG8, GL_RGB8, GL_RGBA8};
+        GLint internalFormat = internalFormatMap[components-1];
         GLint formatMap[4] = {GL_RED, GL_RG, GL_RGB, GL_RGBA};
         GLint format = formatMap[components-1];
         if(mImmutable || (width == mWidth && height == mHeight)) {
@@ -54,7 +56,8 @@ namespace kaun {
             }
             glTexSubImage2D(mTarget, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, buffer);
         } else {
-            glTexImage2D(mTarget, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, buffer);
+            glTexImage2D(mTarget, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, buffer);
+            mPixelFormat = static_cast<PixelFormat>(internalFormat);
             if(genMipmaps) mMinFilter = MinFilter::LINEAR_MIPMAP_LINEAR;
             initSampler();
         }
@@ -89,6 +92,10 @@ namespace kaun {
         return true;
     }
 
+    void Texture::attach(GLenum attachmentPoint) const {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentPoint, getTarget(), getTextureObject(), 0);
+    }
+
     void Texture::setStorage(PixelFormat internalFormat, int width, int height, int levels) {
         if(mTextureObject == 0) {
             glGenTextures(1, &mTextureObject);
@@ -103,6 +110,7 @@ namespace kaun {
         mWidth = width;
         mHeight = height;
         mImmutable = true;
+        mPixelFormat = internalFormat;
 
         /*
         These are all glTexImage2D errors for invalid format combinations:

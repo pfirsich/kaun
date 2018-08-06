@@ -8,30 +8,10 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "renderstate.hpp"
+#include "renderattachment.hpp"
 #include "log.hpp"
 
 namespace kaun {
-    enum class PixelFormat : GLenum {
-        NONE = 0, // for default arguments and such
-        R = GL_R8,
-        R16F = GL_R16F,
-        RG = GL_RG8,
-        RG16F = GL_RG16F,
-        RGB = GL_RGB8,
-        RGB16F = GL_RGB16F,
-        RGBA = GL_RGBA8,
-        RGBA16F = GL_RGBA16F,
-        RGB10_A2 = GL_RGB10_A2,
-        RG11F_B10F = GL_R11F_G11F_B10F,
-        RGBE = GL_RGB9_E5,
-        DEPTH16 = GL_DEPTH_COMPONENT16,
-        DEPTH24 = GL_DEPTH_COMPONENT24,
-        DEPTH32F = GL_DEPTH_COMPONENT32F,
-        DEPTH32F_STENCIL8 = GL_DEPTH32F_STENCIL8,
-        DEPTH24_STENCIL8 = GL_DEPTH24_STENCIL8,
-        STENCIL8 = GL_STENCIL_INDEX8
-    };
-
     class Texture {
     public:
         enum class WrapMode : GLenum {
@@ -60,6 +40,7 @@ namespace kaun {
     private:
         GLenum mTarget;
         GLuint mTextureObject;
+        PixelFormat mPixelFormat;
         int mWidth, mHeight;
         bool mImmutable;
         WrapMode mSWrap, mTWrap;
@@ -81,8 +62,10 @@ namespace kaun {
         static bool currentTextureUnitAvailable[MAX_UNITS];
 
         // Mipmapping is default, since it's takes a little more ram, but usually it's faster and looks nicer
-        Texture(GLenum target = GL_TEXTURE_2D) : mTarget(target), mTextureObject(0), mWidth(-1), mHeight(-1), mImmutable(false),
-                mSWrap(WrapMode::CLAMP_TO_EDGE), mTWrap(WrapMode::CLAMP_TO_EDGE), mMinFilter(MinFilter::LINEAR), mMagFilter(MagFilter::LINEAR) {}
+        Texture(GLenum target = GL_TEXTURE_2D) : mTarget(target), mTextureObject(0), mPixelFormat(PixelFormat::NONE),
+                mWidth(-1), mHeight(-1), mImmutable(false), mSWrap(WrapMode::CLAMP_TO_EDGE),
+                mTWrap(WrapMode::CLAMP_TO_EDGE), mMinFilter(MinFilter::LINEAR),
+                mMagFilter(MagFilter::LINEAR) {}
 
         // Allocate (immutable!) texture storage wit glTexStorage2D
         Texture(PixelFormat internalFormat, int width, int height, int levels = 1, GLenum target = GL_TEXTURE_2D) : Texture(target) {
@@ -108,9 +91,12 @@ namespace kaun {
         void setTarget(GLenum target) { mTarget = target; }
         GLenum getTarget() const { return mTarget; }
         GLuint getTextureObject() const { return mTextureObject; }
+        PixelFormat getPixelFormat() const { return mPixelFormat; }
         int getWidth() const { return mWidth; }
         int getHeight() const { return mHeight; }
         bool isValid() const { return mTextureObject != 0; }
+
+        void attach(GLenum attachmentPoint) const;
 
         void setWrap(WrapMode u, WrapMode v) {
             setParameter(GL_TEXTURE_WRAP_S, static_cast<GLenum>(mSWrap = u));
