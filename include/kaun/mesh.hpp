@@ -77,14 +77,6 @@ namespace kaun {
             return iData;
         }
 
-        uint32_t getIndex(size_t index) {
-            return mIndexBuffer->get(index);
-        }
-
-        void setIndex(size_t index, uint32_t val) {
-            mIndexBuffer->set(index, val);
-        }
-
         void compile();
 
         // instanceCount = 0 means, that the draw commands will not be instanced

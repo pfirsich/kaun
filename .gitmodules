@@ -16,3 +16,9 @@
 [submodule "dependencies/tinyobjloader"]
 	path = dependencies/tinyobjloader
 	url = https://github.com/syoyo/tinyobjloader
+[submodule "dependencies/LuaBridge"]
+	path = dependencies/LuaBridge
+	url = https://github.com/vinniefalco/LuaBridge.git
+[submodule "dependencies/lua"]
+	path = dependencies/lua
+	url = https://github.com/pfirsich/lua.git
