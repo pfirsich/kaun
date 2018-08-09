@@ -34,19 +34,19 @@ include_directories(dependencies/lua/src)
 # luaconf.h seems to be created during cmake configuration and copied to the build dir
 include_directories(build/dependencies/lua)
 
-include_directories(include)
-include_directories(include/kaun)
+include_directories(kaun/include)
 add_compile_definitions(NOMINMAX)
-set(KAUN_SOURCE src/log.cpp src/mesh.cpp src/mesh_buffers.cpp src/mesh_vertexaccessor.cpp
-    src/mesh_vertexformat.cpp src/render.cpp src/renderstate.cpp src/shader.cpp
-    src/texture.cpp src/transform.cpp src/utility.cpp src/window.cpp src/kaun.cpp)
+set(KAUN_SOURCE kaun/log.cpp kaun/mesh.cpp kaun/mesh_buffers.cpp kaun/mesh_vertexaccessor.cpp
+    kaun/mesh_vertexformat.cpp kaun/render.cpp kaun/renderstate.cpp kaun/shader.cpp
+    kaun/texture.cpp kaun/transform.cpp kaun/utility.cpp kaun/window.cpp kaun/kaun.cpp)
 add_library(libkaun STATIC ${KAUN_SOURCE})
 target_link_libraries(libkaun SDL2main SDL2 glad)
 
-add_library(kaun src/lua-kaun.cpp)
+set(LUA_KAUN_SOURCE lua-kaun/lua-kaun.cpp)
+add_library(kaun ${LUA_KAUN_SOURCE})
 target_link_libraries(kaun libkaun liblua)
 
-add_executable(kauntest src/main.cpp)
+add_executable(kauntest kaun/main.cpp)
 target_link_libraries(kauntest libkaun)
 
 set_target_properties(kauntest PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

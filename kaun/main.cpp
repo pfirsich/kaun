@@ -1,4 +1,4 @@
-#include <kaun/kaun.hpp>
+#include <kaun.hpp>
 #include <glm/glm.hpp>
 
 void resize(int w, int h) {

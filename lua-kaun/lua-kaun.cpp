@@ -6,7 +6,7 @@ extern "C" {
 #include <LuaBridge/LuaBridge.h>
 namespace lb = luabridge;
 
-#include <kaun/kaun.hpp>
+#include <kaun.hpp>
 
 #define EXPORT __declspec(dllexport)
 
