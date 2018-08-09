@@ -18,5 +18,5 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace kaun {
-    void init();
+    void init(bool loadGl = false);
 }

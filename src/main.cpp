@@ -11,8 +11,7 @@ int main(int argc, char** argv) {
 
     kaun::WindowProperties props;
     props.msaaSamples = 8;
-    props.fullscreen = true;
-    kaun::setupWindow("Kaun Test", 1920, 1080, props);
+    kaun::setupWindow("Kaun Test", 1600, 900, props);
 
     kaun::resizeSignal.connect(resize);
     kaun::resizeSignal.emit(kaun::getWindowWidth(), kaun::getWindowHeight());

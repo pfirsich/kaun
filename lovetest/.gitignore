@@ -1,0 +1,4 @@
+# Unpack love in this folder and put kaun.dll next to it.
+*
+!.gitignore
+!test/*

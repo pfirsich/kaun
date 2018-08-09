@@ -181,7 +181,7 @@ namespace kaun {
 
         static Texture* pixel(const glm::vec4& col); // col in SRGB
         static Texture* checkerBoard(int width, int height, int checkerSize,
-                                     const glm::vec4& colA = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
-                                     const glm::vec4& colB = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+                                     const glm::vec4& colA = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f),
+                                     const glm::vec4& colB = glm::vec4(0.9f, 0.9f, 0.9f, 1.0f));
     };
 }

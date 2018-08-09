@@ -21,13 +21,12 @@ namespace kaun {
         std::vector<uint32_t> buf(width*height);
         for(int i = 0; i < width*height; ++i) {
             uint32_t col = (i/checkerSize + i/width/checkerSize) % 2 == 0 ? icolA : icolB;
-            LOG_DEBUG("col: %X", col);
             buf[i] = col;
         }
 
         Texture* tex = new Texture;
         tex->loadFromMemory(reinterpret_cast<unsigned char*>(&buf[0]), width, height, 4, false);
-        tex->setMagFilter(MagFilter::NEAREST);
+        //tex->setMagFilter(MagFilter::NEAREST);
 
         return tex;
     }

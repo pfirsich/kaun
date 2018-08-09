@@ -9,6 +9,7 @@
 
 #include "log.hpp"
 #include "texture.hpp"
+#include "uniforminfo.hpp"
 
 namespace kaun {
     class Shader {
@@ -30,8 +31,12 @@ namespace kaun {
         Status mStatus;
         mutable std::unordered_map<std::string, UniformLocation> mAttributeLocations;
         mutable std::unordered_map<std::string, UniformLocation> mUniformLocations;
+        std::unordered_map<std::string, UniformInfo> mUniformInfo;
+
+        void retrieveUniformInfo();
 
         static const Shader* currentShaderProgram;
+        static UniformInfo invalidUniform;
 
     public:
         Shader() : mProgramObject(0), mStatus(Status::EMPTY) {}
@@ -67,6 +72,8 @@ namespace kaun {
 
         UniformLocation getAttributeLocation(const std::string& name) const;
         UniformLocation getUniformLocation(const std::string& name) const;
+
+        const UniformInfo& getUniformInfo(const std::string& name) const;
 
         inline void bind() const {
             if(currentShaderProgram != this) {

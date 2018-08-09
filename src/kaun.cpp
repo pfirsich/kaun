@@ -4,8 +4,14 @@ namespace kaun {
     VertexFormat defaultVertexFormat;
     RenderState defaultRenderState;
 
-    void init() {
+    void init(bool loadGl) {
         setupDefaultLogging();
+
+        if(loadGl) {
+            if(!gladLoadGL()) {
+                LOG_CRITICAL("Failed to initialize GLAD!");
+            }
+        }
 
         defaultVertexFormat
             .add(kaun::AttributeType::POSITION, 3, kaun::AttributeDataType::F32)

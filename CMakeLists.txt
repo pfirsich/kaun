@@ -40,11 +40,13 @@ add_compile_definitions(NOMINMAX)
 set(KAUN_SOURCE src/log.cpp src/mesh.cpp src/mesh_buffers.cpp src/mesh_vertexaccessor.cpp
     src/mesh_vertexformat.cpp src/render.cpp src/renderstate.cpp src/shader.cpp
     src/texture.cpp src/transform.cpp src/utility.cpp src/window.cpp src/kaun.cpp)
-add_library(kaun STATIC ${KAUN_SOURCE})
-target_link_libraries(kaun SDL2main SDL2 glad)
-add_library(lua-kaun src/lua-kaun.cpp)
-target_link_libraries(lua-kaun kaun liblua)
+add_library(libkaun STATIC ${KAUN_SOURCE})
+target_link_libraries(libkaun SDL2main SDL2 glad)
+
+add_library(kaun src/lua-kaun.cpp)
+target_link_libraries(kaun libkaun liblua)
+
 add_executable(kauntest src/main.cpp)
-target_link_libraries(kauntest kaun)
+target_link_libraries(kauntest libkaun)
 
 set_target_properties(kauntest PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

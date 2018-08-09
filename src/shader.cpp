@@ -12,6 +12,7 @@
 
 namespace kaun {
     const Shader* Shader::currentShaderProgram = nullptr;
+    UniformInfo Shader::invalidUniform;
 
     bool Shader::compileString(const std::string& source, Shader::Type type) {
         //LOG_DEBUG("%s:\n%s", type == ShaderType::FRAGMENT ? "fragment" : "vertex", source);
@@ -63,6 +64,33 @@ namespace kaun {
         }
     }
 
+    void Shader::retrieveUniformInfo() {
+        GLint maxUniformNameLength;
+        glGetProgramiv(mProgramObject,  GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformNameLength);
+        char* name = new char[maxUniformNameLength];
+        GLsizei length;
+        GLint size;
+        GLenum type;
+        GLint activeUniformCount;
+        glGetProgramiv(mProgramObject, GL_ACTIVE_UNIFORMS, &activeUniformCount);
+        for(int i = 0; i < activeUniformCount; ++i) {
+            glGetActiveUniform(mProgramObject, i, maxUniformNameLength, &length, &size, &type, name);
+            if(length > 0) {
+                mUniformInfo[name] = UniformInfo(i, size, static_cast<UniformInfo::UniformType>(type), name);
+            }
+        }
+        delete[] name;
+    }
+
+    const UniformInfo& Shader::getUniformInfo(const std::string& name) const {
+        auto it = mUniformInfo.find(name);
+        if(it == mUniformInfo.end()) {
+            return invalidUniform;
+        } else {
+            return it->second;
+        }
+    }
+
     bool Shader::link() {
         if(mStatus != Status::UNLINKED) {
             LOG_ERROR("To link a shader program, the status must be UNLINKED");
@@ -98,7 +126,7 @@ namespace kaun {
             return false;
         } else {
             mStatus = Status::LINKED;
-            LOG_DEBUG("Linked shader %d", mProgramObject);
+            retrieveUniformInfo();
             return true;
         }
     }
