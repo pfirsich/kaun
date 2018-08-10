@@ -42,7 +42,7 @@ set(KAUN_SOURCE kaun/log.cpp kaun/mesh.cpp kaun/mesh_buffers.cpp kaun/mesh_verte
 add_library(libkaun STATIC ${KAUN_SOURCE})
 target_link_libraries(libkaun SDL2main SDL2 glad)
 
-set(LUA_KAUN_SOURCE lua-kaun/lua-kaun.cpp)
+set(LUA_KAUN_SOURCE lua-kaun/lua-kaun.cpp lua-kaun/glstate.cpp)
 add_library(kaun ${LUA_KAUN_SOURCE})
 target_link_libraries(kaun libkaun liblua)
 

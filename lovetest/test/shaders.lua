@@ -18,6 +18,7 @@ uniform vec4 color;
 
 void main() {
     float NdotL = max(0.0, dot(vsOut.normal, normalize(vsOut.eye)));
+    //fragColor = vec4(0.0, 0.0, 1.0, 1.0);
     //fragColor = vec4(color.rgb * NdotL, color.a);
     fragColor = vec4(color.rgb * NdotL * texture(baseTexture, vsOut.texCoord).rgb, color.a);
 }

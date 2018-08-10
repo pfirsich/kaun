@@ -9,6 +9,7 @@ namespace lb = luabridge;
 #include <kaun.hpp>
 
 #include "luax.hpp"
+#include "glstate.hpp"
 
 static const char kaunLua[] =
 #include "kaun.lua"
@@ -151,13 +152,12 @@ struct TextureWrapper : public kaun::Texture {
         auto fileData = getFileData(L, path);
         if(fileData.first != nullptr) {
             TextureWrapper* texture = new TextureWrapper;
-            float start = kaun::getTime();
             texture->loadEncodedFromMemory(fileData.first, fileData.second, false);
-            std::printf("delta %f\n", kaun::getTime() - start);
             pushWithGC(L, texture);
             return 1;
         } else {
             luaL_error(L, "Could not load file %s", path);
+            return 0;
         }
     }
 
@@ -345,12 +345,28 @@ int draw(lua_State* L) {
     return 0;
 }
 
-int setTrafos(lua_State* L) {
-    TransformWrapper* t1 = lb::Userdata::get<TransformWrapper>(L, 1, false);
-    TransformWrapper* t2 = lb::Userdata::get<TransformWrapper>(L, 2, false);
-    t1->setPosition(50.0f, 50.0f, 50.0f);
-    t2->setPosition(50.0f, 50.0f, 50.0f);
-    return 0;
+LoveGlState loveState;
+LoveGlState kaunState;
+
+void beginLoveGraphics() {
+    kaun::flush();
+    kaunState = saveLoveGlState();
+    restoreLoveGlState(loveState);
+}
+
+void endLoveGraphics() {
+    loveState = saveLoveGlState();
+    restoreLoveGlState(kaunState);
+}
+
+void beginLoveEventPump() {
+    saveLoveViewportState(kaunState);
+    restoreLoveViewportState(loveState);
+}
+
+void endLoveEventPump() {
+    saveLoveViewportState(loveState);
+    restoreLoveViewportState(kaunState);
 }
 
 extern "C" EXPORT int luaopen_kaun(lua_State* L) {
@@ -373,8 +389,6 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addFunction("newTrashP", Trash::newTrashP)
         .addCFunction("newTrashS", Trash::newTrashS)
 
-        .addCFunction("setTrafos", setTrafos)
-
         .beginClass<MeshWrapper>("Mesh")
         .endClass()
         .addCFunction("newBoxMesh", MeshWrapper::newBoxMesh)
@@ -390,16 +404,23 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
 
         .addCFunction("clear", clear)
         .addCFunction("clearDepth", clearDepth)
-        .addFunction("setViewport", (void (*)(int, int, int, int))&kaun::setViewport)
+        .addFunction("setViewport", (void(*)(int, int, int, int))&kaun::setViewport)
         .addCFunction("setProjection", setProjection)
         .addFunction("setViewTransform", setViewTransform)
         .addFunction("setModelTransform", setModelTransform)
         .addCFunction("draw", draw)
         .addFunction("flush", kaun::flush)
 
+        .addFunction("beginLoveGraphics", beginLoveGraphics)
+        .addFunction("endLoveGraphics", endLoveGraphics)
+        .addFunction("beginLoveEventPump", beginLoveEventPump)
+        .addFunction("endLoveEventPump", endLoveEventPump)
+
         .endNamespace();
 
     kaun::init(true);
+
+    loveState = saveLoveGlState();
 
     if(luaL_dostring(L, kaunLua)) {
         luaL_error(L, "Error: %s", lua_tostring(L, -1));

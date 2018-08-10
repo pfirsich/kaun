@@ -16,7 +16,6 @@ function love.run()
     love.resize(width, height)
     assert(flags.depth > 0, "Window needs a depth buffer! Add 't.window.depth = 24' to conf.lua.")
 
-
     if love.load then love.load(love.arg.parseGameArguments(arg), arg) end
 
     -- We don't want the first frame's dt to include time taken by love.load.
@@ -28,7 +27,16 @@ function love.run()
     return function()
         -- Process events.
         if love.event then
+            -- pump puts all events in the queue and processes them
+            -- SDL_WINDOWEVENT_RESIZED or SDL_WINDOWEVENT_SIZE_CHANGED
+            -- can result in changes do viewport and scissor state
+            -- the latter might trigger a flushing of batched draws, but if you don't do
+            -- anything weird, no batched draws will be queued after the last
+            -- love.graphics.present(), which also flushed the batched draws
+            kaun.beginLoveEventPump()
             love.event.pump()
+            kaun.endLoveEventPump()
+
             for name, a,b,c,d,e,f in love.event.poll() do
                 if name == "quit" then
                     if not love.quit or not love.quit() then
@@ -47,10 +55,18 @@ function love.run()
 
         if love.graphics.isActive() then
             if love.draw then love.draw() end
+            -- This does not modify GL state IFF the render queue is empty
+            -- so if you wish to use love.graphics, call flush before you use it
             kaun.flush()
+            -- if no batched draws are pending, this should only swap buffers and not modify state
+            -- but this might have to be guarded with begin/endLoveGraphics too
             love.graphics.present()
         end
     end
+end
+
+function love.window.setMode()
+    error("setMode recreates the OpenGL context and kaun can not recover from this. Please do all setMode calls before importing kaun.")
 end
 
 -- vvvvvvvv DO NOT REMOVE vvvvvvvv
