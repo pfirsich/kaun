@@ -14,10 +14,8 @@ namespace kaun {
             const Texture* texture = currentBoundTextures[unit];
             if(texture == nullptr) {
                 glBindTexture(GL_TEXTURE_2D, 0);
-                assert(currentTextureUnitAvailable[unit]);
             } else {
                 glBindTexture(texture->getTarget(), texture->getTextureObject());
-                assert(!currentTextureUnitAvailable[unit]);
             }
         }
     }

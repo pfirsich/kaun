@@ -24,6 +24,7 @@ struct LoveGlState {
     GLboolean scissorTestEnabled; // GL_SCISSOR_TEST
     GLboolean cullFaceEnabled; // GL_CULL_FACE
     GLboolean framebufferSrgbEnabled; // GL_FRAMEBUFFER_SRGB
+    GLboolean blendEnabled; // GL_BLEND
 
     // glCullFace
     GLenum cullFaceMode;
@@ -59,6 +60,16 @@ struct LoveGlState {
 
     // glUseProgram
     GLuint program;
+
+    // glBlendEquationSeparate
+    GLenum blendEquationRgb;
+    GLenum blendEquationAlpha;
+
+    // glBlendFuncSeparate
+    GLenum blendSrcRgb;
+    GLenum blendSrcAlpha;
+    GLenum blendDstRgb;
+    GLenum blendDstAlpha;
 
     // GL_BLEND, glBlendEquation, glBlendFunc
     // glStencilFunc, glStencilOp, glStencilMask

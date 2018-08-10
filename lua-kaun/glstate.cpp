@@ -35,14 +35,14 @@ LoveGlState saveLoveGlState() {
 
     if(maxTextureUnits < 0) maxTextureUnits = glGetInteger(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS);
     // This is purely an optimization and may go very wrong
-    if(maxTextureUnits > 8) maxTextureUnits = 8; 
+    if(maxTextureUnits > 8) maxTextureUnits = 8;
 
     state.activeTexture = glGetInteger(GL_ACTIVE_TEXTURE);
 
     for(int t = 0; t < numTextureTargets; ++t) {
         state.boundTextures[t].resize(maxTextureUnits, 0);
     }
-    
+
     for(int u = 0; u < maxTextureUnits; ++u) {
         glActiveTexture(GL_TEXTURE0 + u);
         for(int t = 0; t < numTextureTargets; ++t) {
@@ -55,6 +55,7 @@ LoveGlState saveLoveGlState() {
     state.scissorTestEnabled = glIsEnabled(GL_SCISSOR_TEST);
     state.cullFaceEnabled = glIsEnabled(GL_CULL_FACE);
     state.framebufferSrgbEnabled = glIsEnabled(GL_FRAMEBUFFER_SRGB);
+    state.blendEnabled = glIsEnabled(GL_BLEND);
 
     state.cullFaceMode = glGetInteger(GL_CULL_FACE_MODE);
     state.frontFace = glGetInteger(GL_FRONT_FACE);
@@ -67,6 +68,14 @@ LoveGlState saveLoveGlState() {
     state.readFramebufferBinding = glGetInteger(GL_READ_FRAMEBUFFER_BINDING);
 
     state.program = glGetInteger(GL_CURRENT_PROGRAM);
+
+    state.blendEquationRgb = glGetInteger(GL_BLEND_EQUATION_RGB);
+    state.blendEquationAlpha = glGetInteger(GL_BLEND_EQUATION_ALPHA);
+
+    state.blendSrcRgb = glGetInteger(GL_BLEND_SRC_RGB);
+    state.blendSrcAlpha = glGetInteger(GL_BLEND_SRC_ALPHA);
+    state.blendDstRgb = glGetInteger(GL_BLEND_DST_RGB);
+    state.blendDstAlpha = glGetInteger(GL_BLEND_DST_ALPHA);
 
     return state;
 }
@@ -116,6 +125,7 @@ void restoreLoveGlState(const LoveGlState& state) {
     glSetEnabled(GL_SCISSOR_TEST, state.scissorTestEnabled);
     glSetEnabled(GL_CULL_FACE, state.cullFaceEnabled);
     glSetEnabled(GL_FRAMEBUFFER_SRGB, state.framebufferSrgbEnabled);
+    glSetEnabled(GL_BLEND, state.blendEnabled);
 
     glCullFace(state.cullFaceMode);
     glFrontFace(state.frontFace);
@@ -128,6 +138,10 @@ void restoreLoveGlState(const LoveGlState& state) {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, state.readFramebufferBinding);
 
     glUseProgram(state.program);
+
+    glBlendEquationSeparate(state.blendEquationRgb, state.blendEquationAlpha);
+    glBlendFuncSeparate(state.blendSrcRgb, state.blendDstRgb,
+                        state.blendSrcAlpha, state.blendDstAlpha);
 }
 
 extern void restoreLoveViewportState(const LoveGlState& state) {
