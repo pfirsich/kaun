@@ -38,6 +38,10 @@ namespace kaun {
         static const Shader* currentShaderProgram;
         static UniformInfo invalidUniform;
 
+        static std::string globalShaderPreamble;
+        static std::string fragmentShaderPreamble;
+        static std::string vertexShaderPreamble;
+
     public:
         static void ensureGlState();
 

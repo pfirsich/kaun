@@ -1,5 +1,3 @@
-#version 330 core
-
 in VSOUT {
     vec2 texCoord;
     vec3 normal;

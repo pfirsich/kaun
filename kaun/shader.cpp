@@ -29,11 +29,15 @@ namespace kaun {
             LOG_ERROR("To compile and attach a shader, the status must be EMPTY or UNLINKED");
         }
 
+        std::string fullSource;
+
         GLenum GLtype = 0;
         if(type == Shader::Type::VERTEX) {
             GLtype = GL_VERTEX_SHADER;
+            fullSource = globalShaderPreamble + vertexShaderPreamble + source;
         } else if(type == Shader::Type::FRAGMENT) {
             GLtype = GL_FRAGMENT_SHADER;
+            fullSource = globalShaderPreamble + fragmentShaderPreamble + source;
         } else {
             LOG_ERROR("Unknown shader type");
             return false;
@@ -41,7 +45,7 @@ namespace kaun {
 
         GLuint shader = glCreateShader(GLtype);
         //LOG_DEBUG(source);
-		const char* cStr = source.c_str();
+		const char* cStr = fullSource.c_str();
         glShaderSource(shader, 1, &cStr, nullptr);
 
         GLint compileStatus;

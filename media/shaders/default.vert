@@ -1,5 +1,3 @@
-#version 330 core
-
 out VSOUT {
     vec2 texCoord;
     vec3 normal;
@@ -8,14 +6,9 @@ out VSOUT {
     vec3 eye;
 } vsOut;
 
-layout(location = 0) in vec3 attrPosition;
-layout(location = 1) in vec3 attrNormal;
-layout(location = 8) in vec2 attrTexCoord;
-
-uniform mat4 kaun_model;
-uniform mat3 kaun_normal;
-uniform mat4 kaun_view;
-uniform mat4 kaun_projection;
+layout(location = KAUN_ATTR_POSITION) in vec3 attrPosition;
+layout(location = KAUN_ATTR_NORMAL) in vec3 attrNormal;
+layout(location = KAUN_ATTR_TEXCOORD0) in vec2 attrTexCoord;
 
 void main() {
     vsOut.texCoord = attrTexCoord;
