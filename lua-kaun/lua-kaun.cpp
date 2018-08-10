@@ -346,7 +346,13 @@ int draw(lua_State* L) {
 }
 
 LoveGlState loveState;
-LoveGlState kaunState;
+
+// As it is now, we only do a bunch of glGet in endLoveGraphics, 
+// which is mostly called right before love.graphics.present 
+// i.e. before buffers are swapped.
+// Bufferswaps usually involve syncing too (glFinish-like?), 
+// so that the hit we take from the sync (glFlush-like) induced by glGet
+// is lessened.
 
 void beginLoveGraphics() {
     kaun::flush();
