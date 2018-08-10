@@ -38,7 +38,7 @@ namespace kaun {
         glTexParameteri(mTarget, GL_TEXTURE_MIN_FILTER, static_cast<GLenum>(mMinFilter));
     }
 
-    void Texture::loadFromMemory(unsigned char* buffer, int width, int height, int components, bool genMipmaps) {
+    void Texture::loadFromMemory(const uint8_t* buffer, int width, int height, int components, bool genMipmaps) {
         assert(components >= 1 && components <= 4);
 
         if(mTextureObject == 0) glGenTextures(1, &mTextureObject);
@@ -67,7 +67,7 @@ namespace kaun {
         mHeight = height;
     }
 
-    bool Texture::loadEncodedFromMemory(unsigned char* encBuffer, int len, bool genMipmaps) {
+    bool Texture::loadEncodedFromMemory(const uint8_t* encBuffer, int len, bool genMipmaps) {
         int w, h, c;
         unsigned char* buf = stbi_load_from_memory(encBuffer, len, &w, &h, &c, 0);
         if(buf == 0) {

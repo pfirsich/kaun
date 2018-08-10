@@ -8,83 +8,13 @@ namespace lb = luabridge;
 
 #include <kaun.hpp>
 
+#include "luax.hpp"
+
+static const char kaunLua[] =
+#include "kaun.lua"
+;
+
 #define EXPORT __declspec(dllexport)
-
-template <typename T>
-T luax_check(lua_State* L, int index);
-
-template <>
-float luax_check<float>(lua_State* L, int index) {
-    return static_cast<float>(luaL_checknumber(L, index));
-}
-
-template <>
-glm::vec2 luax_check<glm::vec2>(lua_State* L, int index) {
-    return glm::vec2(luax_check<float>(L, index + 0), luax_check<float>(L, index + 1));
-}
-
-template <>
-glm::vec3 luax_check<glm::vec3>(lua_State* L, int index) {
-    return glm::vec3(luax_check<float>(L, index + 0), luax_check<float>(L, index + 1),
-                     luax_check<float>(L, index + 2));
-}
-
-template <>
-glm::vec4 luax_check<glm::vec4>(lua_State* L, int index) {
-    return glm::vec4(luax_check<float>(L, index + 0), luax_check<float>(L, index + 1),
-                     luax_check<float>(L, index + 2), luax_check<float>(L, index + 3));
-}
-
-// checks if stack[index] is a table with num numbers and pushes them on to the stack
-// true on success, false if malformed
-bool luax_getnumtable(lua_State* L, int index, int num) {
-    if(index < 0) index = lua_gettop(L) + index + 1;
-    if(lua_istable(L, index)) {
-        int len = lua_objlen(L, index);
-        if(len == num) {
-            luaL_checkstack(L, num, "Cannot grow stack to appropriate size.");
-            for(int i = 1; i <= num; ++i) {
-                lua_rawgeti(L, index, i);
-                if(!lua_isnumber(L, -1)) {
-                    luaL_error(L, "Expected number for element #%d in table.", i);
-                    lua_pop(L, i); // clean up pushed elements
-                    return false;
-                }
-            }
-            return true;
-        } else {
-            luaL_error(L, "Expecting table of length %d", num);
-            return false;
-        }
-    } else {
-        luaL_typerror(L, index, "table");
-        return false;
-    }
-}
-
-template <typename T>
-T luax_checkvectable(lua_State* L, int index) {
-    int len = T::length();
-    if(luax_getnumtable(L, index, len)) {
-        T v = luax_check<T>(L, -len);
-        lua_pop(L, len);
-        return v;
-    }
-    return T();
-}
-
-void luax_pushvec3(lua_State* L, const glm::vec3& v) {
-    lua_pushnumber(L, v.x);
-    lua_pushnumber(L, v.y);
-    lua_pushnumber(L, v.z);
-}
-
-void luax_pushvec4(lua_State* L, const glm::vec4& v) {
-    lua_pushnumber(L, v.x);
-    lua_pushnumber(L, v.y);
-    lua_pushnumber(L, v.z);
-    lua_pushnumber(L, v.w);
-}
 
 template <typename T>
 int __gc(lua_State* L) {
@@ -101,6 +31,21 @@ void pushWithGC(lua_State* L, T* obj) {
     lb::push(L, __gc<T>);
     lua_rawset(L, -3);
     lua_pop(L, 1); // pop metatable
+}
+
+std::pair<const uint8_t*, int> getFileData(lua_State* L, const char* filename) {
+    lua_getglobal(L, "_kaun");
+    lua_pushstring(L, "getFileData");
+    lua_rawget(L, -2);
+    lua_pushstring(L, filename);
+    if(lua_pcall(L, 1, 2, 0)) {
+        luaL_error(L, "Could not get file data: %s", lua_tostring(L, -1));
+        return std::make_pair(nullptr, 0);
+    } else {
+        const uint8_t* fileData = reinterpret_cast<uint8_t*>(lua_touserdata(L, -2));
+        int fileSize = luaL_checkint(L, -1);
+        return std::make_pair(fileData, fileSize);
+    } 
 }
 
 struct TransformWrapper : public kaun::Transform {
@@ -201,6 +146,21 @@ struct RenderStateWrapper : public kaun::RenderState {
 };
 
 struct TextureWrapper : public kaun::Texture {
+    static int newTexture(lua_State* L) {
+        const char* path = luaL_checklstring(L, 1, nullptr);
+        auto fileData = getFileData(L, path);
+        if(fileData.first != nullptr) {
+            TextureWrapper* texture = new TextureWrapper;
+            float start = kaun::getTime();
+            texture->loadEncodedFromMemory(fileData.first, fileData.second, false);
+            std::printf("delta %f\n", kaun::getTime() - start);
+            pushWithGC(L, texture);
+            return 1;
+        } else {
+            luaL_error(L, "Could not load file %s", path);
+        }
+    }
+
     static int newCheckerTexture(lua_State* L) {
         int args = lua_gettop(L);
         if(args == 3 || args == 9 || args == 11) {
@@ -340,13 +300,13 @@ int draw(lua_State* L) {
                                 uniforms.emplace_back(name, luax_check<float>(L, -1));
                                 break;
                             case kaun::UniformInfo::UniformType::VEC2:
-                                uniforms.emplace_back(name, luax_checkvectable<glm::vec2>(L, -1)); 
+                                uniforms.emplace_back(name, luax_checkvectable<glm::vec2>(L, -1));
                                 break;
                             case kaun::UniformInfo::UniformType::VEC3:
-                                uniforms.emplace_back(name, luax_checkvectable<glm::vec3>(L, -1)); 
+                                uniforms.emplace_back(name, luax_checkvectable<glm::vec3>(L, -1));
                                 break;
                             case kaun::UniformInfo::UniformType::VEC4:
-                                uniforms.emplace_back(name, luax_checkvectable<glm::vec4>(L, -1)); 
+                                uniforms.emplace_back(name, luax_checkvectable<glm::vec4>(L, -1));
                                 break;
                             case kaun::UniformInfo::UniformType::MAT2:
                             case kaun::UniformInfo::UniformType::MAT3:
@@ -393,47 +353,6 @@ int setTrafos(lua_State* L) {
     return 0;
 }
 
-const char* loveRun = R"(function love.run()
-    local width, height, flags = love.window.getMode()
-    love.resize(width, height)
-    assert(flags.depth > 0, "Window needs a depth buffer! Add 't.window.depth = 24' to conf.lua.")
-
-    if love.load then love.load(love.arg.parseGameArguments(arg), arg) end
-
-    -- We don't want the first frame's dt to include time taken by love.load.
-    if love.timer then love.timer.step() end
-
-    local dt = 0
-
-    -- Main loop time.
-    return function()
-        -- Process events.
-        if love.event then
-            love.event.pump()
-            for name, a,b,c,d,e,f in love.event.poll() do
-                if name == "quit" then
-                    if not love.quit or not love.quit() then
-                        return a or 0
-                    end
-                end
-                love.handlers[name](a,b,c,d,e,f)
-            end
-        end
-
-        -- Update dt, as we'll be passing it to update
-        if love.timer then dt = love.timer.step() end
-
-        -- Call update and draw
-        if love.update then love.update(dt) end -- will pass 0 if love.timer is disabled
-
-        if love.graphics.isActive() then
-            if love.draw then love.draw() end
-            kaun.flush()
-            love.graphics.present()
-        end
-    end
-end)";
-
 extern "C" EXPORT int luaopen_kaun(lua_State* L) {
     lb::getGlobalNamespace(L)
         .beginNamespace("kaun")
@@ -466,6 +385,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
 
         .beginClass<TextureWrapper>("Texture")
         .endClass()
+        .addCFunction("newTexture", TextureWrapper::newTexture)
         .addCFunction("newCheckerTexture", TextureWrapper::newCheckerTexture)
 
         .addCFunction("clear", clear)
@@ -481,7 +401,9 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
 
     kaun::init(true);
 
-    luaL_dostring(L, loveRun);
+    if(luaL_dostring(L, kaunLua)) {
+        luaL_error(L, "Error: %s", lua_tostring(L, -1));
+    }
     // make love.graphics untouchable?
 
     lb::push(L, lb::getGlobal(L, "kaun"));

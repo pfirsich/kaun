@@ -80,8 +80,8 @@ namespace kaun {
             glDeleteTextures(1, &mTextureObject);
         }
 
-        void loadFromMemory(uint8_t* buffer, int width, int height, int components, bool genMipmaps = true);
-        bool loadEncodedFromMemory(uint8_t* encBuffer, int len, bool genMipmaps = true);
+        void loadFromMemory(const uint8_t* buffer, int width, int height, int components, bool genMipmaps = true);
+        bool loadEncodedFromMemory(const uint8_t* encBuffer, int len, bool genMipmaps = true);
         bool loadFromFile(const std::string& filename, bool genMipmaps = true);
         void setStorage(PixelFormat format, int width, int height, int levels = 1);
         void updateData(GLenum format, GLenum type, const void* data, int level = 0, int width = -1, int height = -1, int x = 0, int y = 0);
