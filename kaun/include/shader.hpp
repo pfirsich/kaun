@@ -39,6 +39,8 @@ namespace kaun {
         static UniformInfo invalidUniform;
 
     public:
+        static void ensureGlState();
+
         Shader() : mProgramObject(0), mStatus(Status::EMPTY) {}
 
         Shader(const std::string& fragPath, const std::string& vertPath) :

@@ -16,6 +16,7 @@ namespace kaun {
                                 const RenderAttachment* depthStencil = nullptr);
     extern void clear(const glm::vec4& color = glm::vec4(0.0f), int colorAttachmentIndex = 0);
     extern void clearDepth(float value = 1.0f);
+    extern void setViewport();
     extern void setViewport(int x, int y, int w, int h);
     extern void setViewport(const glm::ivec4& viewport);
 
@@ -31,4 +32,6 @@ namespace kaun {
                      const RenderState& state = defaultRenderState);
 
     extern void flush(/*sortFunction - pointer/enum?*/);
+
+    extern void ensureGlState();
 }

@@ -8,7 +8,11 @@
 #include "mesh.hpp"
 
 namespace kaun {
-    GLuint Mesh::lastBoundVAO = 0;
+    GLuint Mesh::currentVAO = 0;
+
+    void Mesh::ensureGlState() {
+        glBindVertexArray(currentVAO);
+    }
 
     VertexBuffer* Mesh::hasAttribute(AttributeType attrType) const {
         for(auto& vBuffer : mVertexBuffers) {
@@ -44,6 +48,7 @@ namespace kaun {
         if(mIndexBuffer != nullptr) mIndexBuffer->bind();
 
         glBindVertexArray(0);
+        currentVAO = 0;
 
         // VAO stores the last bound ELEMENT_BUFFER state, so as soon as the VAO is unbound, unbind the VBO
         if(mIndexBuffer != nullptr) mIndexBuffer->unbind();
@@ -54,7 +59,10 @@ namespace kaun {
             compile();
         }
 
-        if(lastBoundVAO != mVAO) glBindVertexArray(mVAO);
+        if(currentVAO != mVAO) {
+            glBindVertexArray(mVAO);
+            currentVAO = mVAO;
+        }
 
         // A lof of this can go wrong if someone compiles this Mesh without an index buffer attached, then attaches one and compiles it with another
         // shader, while both are in use

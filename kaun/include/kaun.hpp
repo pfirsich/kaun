@@ -19,4 +19,5 @@
 
 namespace kaun {
     extern void init(bool loadGl = false);
+    extern void ensureGlState();
 }

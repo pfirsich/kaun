@@ -70,14 +70,10 @@ namespace kaun {
         BlendEq mBlendEquation;
 
     public:
-        static bool currentDepthWrite;
-        static DepthFunc currentDepthFunc;
-        static FaceDirections currentCullFaces;
-        static FaceOrientation currentFrontFace;
-        static bool currentBlendEnabled;
-        static BlendFactor currentBlendSrcFactor;
-        static BlendFactor currentBlendDstFactor;
-        static BlendEq currentBlendEquation;
+        static RenderState glDefaults();
+
+        static RenderState currentState;
+        static void ensureGlState();
 
         RenderState() : mDepthWrite(true), mDepthFunc(DepthFunc::LEQUAL), mCullFaces(FaceDirections::BACK),
                         mFrontFace(FaceOrientation::CCW), mBlendEnabled(false), mBlendSrcFactor(BlendFactor::ONE),

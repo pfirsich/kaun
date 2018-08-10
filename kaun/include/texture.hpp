@@ -61,6 +61,8 @@ namespace kaun {
         static const Texture* currentBoundTextures[MAX_UNITS];
         static bool currentTextureUnitAvailable[MAX_UNITS];
 
+        static void ensureGlState();
+
         // Mipmapping is default, since it's takes a little more ram, but usually it's faster and looks nicer
         Texture(GLenum target = GL_TEXTURE_2D) : mTarget(target), mTextureObject(0), mPixelFormat(PixelFormat::NONE),
                 mWidth(-1), mHeight(-1), mImmutable(false), mSWrap(WrapMode::CLAMP_TO_EDGE),
@@ -123,9 +125,6 @@ namespace kaun {
             if(currentBoundTextures[unit] != this && mTextureObject != 0) {
                 glActiveTexture(GL_TEXTURE0 + unit);
                 glBindTexture(mTarget, mTextureObject);
-
-                int boundTexture;
-                glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTexture);
                 currentBoundTextures[unit] = this;
                 currentTextureUnitAvailable[unit] = false;
             }

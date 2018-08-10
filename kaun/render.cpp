@@ -169,6 +169,10 @@ namespace kaun {
         glClearBufferfv(GL_DEPTH, 0, &value);
     }
 
+    void setViewport() {
+        setViewport(viewport.x, viewport.y, viewport.z, viewport.w);
+    }
+
     void setViewport(int x, int y, int w, int h) {
         viewport = glm::ivec4(x, y, w, h);
         glViewport(x, y, w, h);
@@ -199,7 +203,7 @@ namespace kaun {
         projectionMatrix = matrix;
     }
 
-    void setViewMatrix(const glm::mat4 view) {
+    void setViewMatrix(const glm::mat4& view) {
         viewMatrix = view;
     }
 
@@ -246,5 +250,12 @@ namespace kaun {
             entry.mesh->draw();
         }
         renderQueue.clear();
+    }
+    
+    void ensureGlState() {
+        RenderState::ensureGlState();
+        Shader::ensureGlState();
+        Texture::ensureGlState();
+        Mesh::ensureGlState();
     }
 }

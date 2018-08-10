@@ -14,6 +14,14 @@ namespace kaun {
     const Shader* Shader::currentShaderProgram = nullptr;
     UniformInfo Shader::invalidUniform;
 
+    void Shader::ensureGlState() {
+        if(currentShaderProgram == nullptr) {
+            glUseProgram(0);
+        } else {
+            glUseProgram(currentShaderProgram->getProgramObject());
+        }
+    }
+
     bool Shader::compileString(const std::string& source, Shader::Type type) {
         //LOG_DEBUG("%s:\n%s", type == ShaderType::FRAGMENT ? "fragment" : "vertex", source);
 

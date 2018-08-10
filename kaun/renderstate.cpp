@@ -2,66 +2,78 @@
 #include "log.hpp"
 
 namespace kaun {
-    // These values represent the OpenGL default values
-    bool RenderState::currentDepthWrite = true;
-    RenderState::DepthFunc RenderState::currentDepthFunc = RenderState::DepthFunc::DISABLED;
-	RenderState::FaceDirections RenderState::currentCullFaces = RenderState::FaceDirections::NONE;
-	RenderState::FaceOrientation RenderState::currentFrontFace = RenderState::FaceOrientation::CCW;
-    bool RenderState::currentBlendEnabled = false;
-    RenderState::BlendFactor RenderState::currentBlendSrcFactor = RenderState::BlendFactor::ONE;
-    RenderState::BlendFactor RenderState::currentBlendDstFactor = RenderState::BlendFactor::ZERO;
-    RenderState::BlendEq RenderState::currentBlendEquation = RenderState::BlendEq::ADD;
+    RenderState RenderState::currentState = glDefaults();
+
+    void RenderState::ensureGlState() {
+        currentState.apply(true);
+    }
+
+    // OpenGL default vlaues (i.e. the initial values of these states at the start of the program)
+    RenderState RenderState::glDefaults() {
+        RenderState state;
+        state.mDepthWrite = true;
+        state.mDepthFunc = RenderState::DepthFunc::DISABLED;
+        state.mCullFaces = RenderState::FaceDirections::NONE;
+        state.mFrontFace = RenderState::FaceOrientation::CCW;
+        state.mBlendEnabled = false;
+        state.mBlendSrcFactor = RenderState::BlendFactor::ONE;
+        state.mBlendDstFactor = RenderState::BlendFactor::ZERO;
+        state.mBlendEquation = RenderState::BlendEq::ADD;
+        return state;
+    }
 
     void RenderState::apply(bool force) const {
-        if(mDepthWrite != currentDepthWrite || force) {
+        if(mDepthWrite != currentState.mDepthWrite || force) {
             glDepthMask(mDepthWrite ? GL_TRUE : GL_FALSE);
-            currentDepthWrite = mDepthWrite;
+            currentState.mDepthWrite = mDepthWrite;
         }
 
-        if(mDepthFunc != currentDepthFunc || force) {
+        if(mDepthFunc != currentState.mDepthFunc || force) {
             if(mDepthFunc == DepthFunc::DISABLED) {
                 glDisable(GL_DEPTH_TEST);
             } else {
                 glEnable(GL_DEPTH_TEST);
                 glDepthFunc(static_cast<GLenum>(mDepthFunc));
             }
-            currentDepthFunc = mDepthFunc;
+            currentState.mDepthFunc = mDepthFunc;
         }
 
-        if(mCullFaces != currentCullFaces || force) {
+        if(mCullFaces != currentState.mCullFaces || force) {
             if(mCullFaces == FaceDirections::NONE) {
                 glDisable(GL_CULL_FACE);
             } else {
                 glEnable(GL_CULL_FACE);
                 glCullFace(static_cast<GLenum>(mCullFaces));
             }
-            currentCullFaces = mCullFaces;
+            currentState.mCullFaces = mCullFaces;
         }
 
-        if(mFrontFace != currentFrontFace || force) {
+        if(mFrontFace != currentState.mFrontFace || force) {
             glFrontFace(static_cast<GLenum>(mFrontFace));
-            currentFrontFace = mFrontFace;
+            currentState.mFrontFace = mFrontFace;
         }
 
-        if(mBlendEnabled != currentBlendEnabled || force) {
+        if(mBlendEnabled != currentState.mBlendEnabled || force) {
             if(mBlendEnabled) {
                 glEnable(GL_BLEND);
             } else {
                 glDisable(GL_BLEND);
             }
-            currentBlendEnabled = mBlendEnabled;
+            currentState.mBlendEnabled = mBlendEnabled;
         }
 
         if(mBlendEnabled) {
-            if(mBlendSrcFactor != currentBlendSrcFactor || mBlendDstFactor != currentBlendDstFactor || force) {
+            if(mBlendSrcFactor != currentState.mBlendSrcFactor
+                    || mBlendDstFactor != currentState.mBlendDstFactor
+                    || force) {
                 glBlendFunc(static_cast<GLenum>(mBlendSrcFactor),
                             static_cast<GLenum>(mBlendDstFactor));
-                currentBlendSrcFactor = mBlendSrcFactor;
-                currentBlendDstFactor = mBlendDstFactor;
+                currentState.mBlendSrcFactor = mBlendSrcFactor;
+                currentState.mBlendDstFactor = mBlendDstFactor;
             }
-            if(mBlendEquation != currentBlendEquation || force) {
+            if(mBlendEquation != currentState.mBlendEquation || force) {
                 glBlendEquation(static_cast<GLenum>(mBlendEquation));
-                currentBlendEquation = mBlendEquation;
+                currentState.mBlendEquation = mBlendEquation;
             }
         }
     }

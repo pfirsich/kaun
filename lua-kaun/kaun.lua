@@ -56,10 +56,9 @@ function love.run()
         if love.graphics.isActive() then
             if love.draw then love.draw() end
             -- This does not modify GL state IFF the render queue is empty
-            -- so if you wish to use love.graphics, call flush before you use it
             kaun.flush()
             -- if no batched draws are pending, this should only swap buffers and not modify state
-            -- but this might have to be guarded with begin/endLoveGraphics too
+            -- but this might have to be guarded with begin/endLoveGraphics too eventually
             love.graphics.present()
         end
     end

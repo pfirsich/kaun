@@ -25,8 +25,6 @@ namespace kaun {
         };
 
     private:
-        static GLuint lastBoundVAO;
-
         DrawMode mMode;
         GLuint mVAO;
         std::vector<std::unique_ptr<VertexBuffer> > mVertexBuffers;
@@ -35,7 +33,11 @@ namespace kaun {
         mutable AABoundingBox mBoundingBox;
         mutable bool mBBoxDirty;
 
+        static GLuint currentVAO;
+
     public:
+        static void ensureGlState();
+
         Mesh(DrawMode mode) : mMode(mode), mVAO(0), mIndexBuffer(nullptr), mBBoxDirty(true) {}
 
         // I'm not really sure what I want these to do

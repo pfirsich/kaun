@@ -8,6 +8,20 @@ namespace kaun {
     const Texture* Texture::currentBoundTextures[Texture::MAX_UNITS] = {nullptr};
     bool Texture::currentTextureUnitAvailable[Texture::MAX_UNITS] = {true};
 
+    void Texture::ensureGlState() {
+        for(int unit = 0; unit < Texture::MAX_UNITS; ++unit) {
+            glActiveTexture(GL_TEXTURE0 + unit);
+            const Texture* texture = currentBoundTextures[unit];
+            if(texture == nullptr) {
+                glBindTexture(GL_TEXTURE_2D, 0);
+                assert(currentTextureUnitAvailable[unit]);
+            } else {
+                glBindTexture(texture->getTarget(), texture->getTextureObject());
+                assert(!currentTextureUnitAvailable[unit]);
+            }
+        }
+    }
+
     Texture* Texture::pixel(const glm::vec4& col) {
         uint32_t data = colToInt(col);
         Texture* temp = new Texture;

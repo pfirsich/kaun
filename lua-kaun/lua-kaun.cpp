@@ -350,23 +350,24 @@ LoveGlState kaunState;
 
 void beginLoveGraphics() {
     kaun::flush();
-    kaunState = saveLoveGlState();
+    // we don't need to do save kaun's gl state here, since we
+    // KNOW the state kaun has saved internally
     restoreLoveGlState(loveState);
 }
 
 void endLoveGraphics() {
     loveState = saveLoveGlState();
-    restoreLoveGlState(kaunState);
+    // kaun's internal gl state is already saved in kaun, restore it
+    kaun::ensureGlState();
 }
 
 void beginLoveEventPump() {
-    saveLoveViewportState(kaunState);
     restoreLoveViewportState(loveState);
 }
 
 void endLoveEventPump() {
     saveLoveViewportState(loveState);
-    restoreLoveViewportState(kaunState);
+    kaun::setViewport();
 }
 
 extern "C" EXPORT int luaopen_kaun(lua_State* L) {
