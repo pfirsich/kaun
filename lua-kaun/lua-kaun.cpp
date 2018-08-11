@@ -49,6 +49,57 @@ std::pair<const uint8_t*, int> getFileData(lua_State* L, const char* filename) {
     } 
 }
 
+template <typename T>
+class LuaEnum {
+private:
+    std::string name;
+    std::unordered_map<std::string, T> valueMap;
+
+public:
+    LuaEnum(const std::string& name, const std::unordered_map<std::string, T>& valueMap) :
+            name(name), valueMap(valueMap) {}
+
+    std::string getName() const { return name; }
+    const std::unordered_map<std::string, T> getValueMap() const { return valueMap; }
+    
+    const std::vector<std::string> getValues() const {
+        std::vector<std::string> values;
+        for(auto value : valueMap) {
+            values.push_back(value.first);
+        }
+        return values;
+    }
+
+    std::string getValueString() const {
+        std::stringstream s;
+        bool first = true;
+        for(auto value : valueMap) {
+            s << (first ? "'" : ", '") << value.first << "'";
+            first = false;
+        }
+        return s.str();
+    }
+
+    bool is(lua_State* L, int idx) {
+        return lua_isstring(L, idx) && valueMap.find(lua_tostring(L, idx)) != valueMap.end();
+    }
+
+    T check(lua_State* L, int idx) {
+        if(!lua_isstring(L, idx)) {
+            luaL_error(L, "Invalid %s, expected one of: %s", name.c_str(), getValueString().c_str());
+            return T();
+        }
+        const char* value = luaL_checklstring(L, idx, nullptr);
+        auto it = valueMap.find(value);
+        if(it == valueMap.end()) {
+            luaL_error(L, "Invalid %s '%s': expected one of %s", name.c_str(), value, getValueString().c_str());
+            return T();
+        } else {
+            return it->second;
+        }
+    }
+};
+
 struct TransformWrapper : public kaun::Transform {
     void setPosition(float x, float y, float z) {
         Transform::setPosition(glm::vec3(x, y, z));
@@ -59,8 +110,44 @@ struct TransformWrapper : public kaun::Transform {
         return 3;
     }
 
+    int getForward(lua_State* L) {
+        luax_pushvec3(L, Transform::getForward());
+        return 3;
+    }
+
+    int getUp(lua_State* L) {
+        luax_pushvec3(L, Transform::getUp());
+        return 3;
+    }
+
+    int getRight(lua_State* L) {
+        luax_pushvec3(L, Transform::getRight());
+        return 3;
+    }
+
     void rotate(float angle, float axisX, float axisY, float axisZ) {
         Transform::rotate(angle, glm::vec3(axisX, axisY, axisZ));
+    }
+
+    void rotateWorld(float angle, float axisX, float axisY, float axisZ) {
+        Transform::rotateWorld(angle, glm::vec3(axisX, axisY, axisZ));
+    }
+
+    int localDirToWorld(lua_State* L) {
+        luax_pushvec3(L, Transform::localDirToWorld(luax_check<glm::vec3>(L, 2)));
+        return 3;
+    }
+
+    int lookAt(lua_State* L) {
+        int nargs = lua_gettop(L);
+        if(nargs == 4) {
+            Transform::lookAt(luax_check<glm::vec3>(L, 2));
+        } else if(nargs == 7) {
+            Transform::lookAt(luax_check<glm::vec3>(L, 2), luax_check<glm::vec3>(L, 5));
+        } else {
+            luaL_error(L, "Number of arguments to Transform:lookAt must be 7 or 10. Got %d", nargs);
+        }
+        return 0;
     }
 
     int lookAtPos(lua_State* L) {
@@ -70,7 +157,7 @@ struct TransformWrapper : public kaun::Transform {
 	    } else if(args == 10) {
             Transform::lookAtPos(luax_check<glm::vec3>(L, 2), luax_check<glm::vec3>(L, 5), luax_check<glm::vec3>(L, 8));
 	    } else {
-		    luaL_error(L, "Number of arguments to kaun.lookAtPos must be 7 or 10. Got %d", args);
+		    luaL_error(L, "Number of arguments to Transform:lookAtPos must be 7 or 10. Got %d", args);
 	    }
         return 0;
     }
@@ -104,11 +191,200 @@ public:
     }
 };
 
-struct VertexFormatWrapper : public kaun::VertexFormat {
+LuaEnum<kaun::AttributeType> attributeType("attribute type", {
+    {"POSITION", kaun::AttributeType::POSITION},
+    {"NORMAL", kaun::AttributeType::NORMAL},
+    {"TANGENT", kaun::AttributeType::TANGENT},
+    {"BITANGENT", kaun::AttributeType::BITANGENT},
+    {"COLOR0", kaun::AttributeType::COLOR0},
+    {"COLOR1", kaun::AttributeType::COLOR1},
+    {"BONEINDICES", kaun::AttributeType::BONEINDICES},
+    {"BONEWEIGHTS", kaun::AttributeType::BONEWEIGHTS},
+    {"TEXCOORD0", kaun::AttributeType::TEXCOORD0},
+    {"TEXCOORD1", kaun::AttributeType::TEXCOORD1},
+    {"TEXCOORD2", kaun::AttributeType::TEXCOORD2},
+    {"TEXCOORD3", kaun::AttributeType::TEXCOORD3},
+    {"CUSTOM0", kaun::AttributeType::CUSTOM0},
+    {"CUSTOM1", kaun::AttributeType::CUSTOM1},
+    {"CUSTOM2", kaun::AttributeType::CUSTOM2},
+    {"CUSTOM3", kaun::AttributeType::CUSTOM3},
+    {"CUSTOM4", kaun::AttributeType::CUSTOM4},
+    {"CUSTOM5", kaun::AttributeType::CUSTOM5},
+    {"CUSTOM6", kaun::AttributeType::CUSTOM6},
+    {"CUSTOM7", kaun::AttributeType::CUSTOM7},
+});
 
+LuaEnum<kaun::AttributeDataType> attributeDataType("attribute data type", {
+    {"I8", kaun::AttributeDataType::I8},
+    {"UI8", kaun::AttributeDataType::UI8},
+    {"I16", kaun::AttributeDataType::I16},
+    {"UI16", kaun::AttributeDataType::UI16},
+    {"I32", kaun::AttributeDataType::I32},
+    {"UI32", kaun::AttributeDataType::UI32},
+    {"F32", kaun::AttributeDataType::F32},
+});
+
+struct VertexFormatWrapper : public kaun::VertexFormat {
+    static int newVertexFormat(lua_State* L) {
+        int nargs = lua_gettop(L);
+        if(nargs == 0) luaL_error(L, "Vertex format needs at least one attribute.");
+        VertexFormatWrapper* format = reinterpret_cast<VertexFormatWrapper*>(new kaun::VertexFormat());
+
+        for(int arg = 1; arg <= nargs; ++arg) {
+            if(!lua_istable(L, arg)) luaL_typerror(L, 1, "table");
+            int len = lua_objlen(L, arg);
+            if(len < 3) luaL_error(L, "Vertex attribute table needs at least 3 elements: type, count, data type");
+
+            for(int i = 1; i <= 3; ++i) lua_rawgeti(L, arg, i);
+            kaun::AttributeType type = attributeType.check(L, -3);
+            int count = luaL_checkint(L, -2);
+            if(count < 1 || count >= 4) luaL_error(L, "count has to be 1, 2, 3 or 5");
+            kaun::AttributeDataType dataType = attributeDataType.check(L, -1);
+            lua_pop(L, 3);
+
+            bool normalized = false;
+            if(len >= 4) {
+                lua_rawgeti(L, arg, 4);
+                if(!lua_isboolean(L, -1)) luaL_error(L, "Fourth element in attribute table ('normalized') has to be boolean.");
+                normalized = lua_toboolean(L, -1);
+                lua_pop(L, 1);
+            }
+
+            unsigned int divisor = 0;
+            if(len >= 5) {
+                lua_rawgeti(L, arg, 5);
+                divisor = luaL_checkint(L, -1);
+                lua_pop(L, 1);
+            }
+
+            format->add(type, count, dataType, normalized, divisor);
+        }
+
+        pushWithGC(L, format);
+        return 1;
+    }
 };
 
+LuaEnum<kaun::Mesh::DrawMode> meshDrawMode("mesh draw mode", {
+    {"points", kaun::Mesh::DrawMode::POINTS},
+    {"lines", kaun::Mesh::DrawMode::LINES},
+    {"line_loop", kaun::Mesh::DrawMode::LINE_LOOP},
+    {"line_strip", kaun::Mesh::DrawMode::LINE_STRIP},
+    {"triangles", kaun::Mesh::DrawMode::TRIANGLES},
+    {"triangle_fan", kaun::Mesh::DrawMode::TRIANGLE_FAN},
+    {"triangle_strip", kaun::Mesh::DrawMode::TRIANGLE_STRIP},
+});
+
+LuaEnum<kaun::UsageHint> usageHint("usage hint", {
+    {"static", kaun::UsageHint::STATIC},
+    {"stream", kaun::UsageHint::STREAM},
+    {"dynamic", kaun::UsageHint::DYNAMIC},
+});
+
 struct MeshWrapper : public kaun::Mesh {
+    // This function assumes the element at idx is already a table
+    int setVerticesInternal(lua_State* L, int idx) {
+        auto vertexBuffer = getVertexBuffers()[0];
+        auto format = vertexBuffer->getVertexFormat();
+        auto attributes = format.getAttributes();
+        int components = 0;
+        for(auto& attr : attributes) components += attr.num;
+
+        // verfiy vertex table format
+        size_t vertexCount = lua_objlen(L, idx);
+        if(vertexBuffer->getNumVertices() < vertexCount) vertexBuffer->reallocate(vertexCount);
+        std::vector<float> data;
+        for(size_t v = 1; v <= vertexCount; ++v) {
+            lua_rawgeti(L, idx, v);
+            if(!lua_istable(L, -1)) 
+                luaL_error(L, "Each vertex has to be a table");
+            if(lua_objlen(L, -1) != components) 
+                luaL_error(L, "Each vertex table needs a number of values equal to the number of components in the vertex format (here: %d)", components);
+
+            for(int i = 1; i <= components; ++i) {
+                lua_rawgeti(L, -1, i);
+                data.push_back(luax_check<float>(L, -1));
+                lua_pop(L, 1);
+            }
+            
+            lua_pop(L, 1);
+        }
+
+        int c = 0;
+        for(auto& attr : attributes) {
+            switch(attr.num) {
+                case 1: {
+                    auto accessor = getAccessor<float>(attr.type);
+                    for(size_t v = 0; v < vertexCount; ++v) {
+                        accessor.set(v, data[v * components + c]);
+                    }
+                    break;
+                }
+                case 2: {
+                    auto accessor = getAccessor<glm::vec2>(attr.type);
+                    for(size_t v = 0; v < vertexCount; ++v) {
+                        accessor.set(v, glm::make_vec2(&data[0] + v * components + c));
+                    }
+                    break;
+                }
+                case 3: {
+                    auto accessor = getAccessor<glm::vec3>(attr.type);
+                    for(size_t v = 0; v < vertexCount; ++v) {
+                        accessor.set(v, glm::make_vec3(&data[0] + v * components + c));
+                    }
+                    break;
+                }
+                case 4: {
+                    auto accessor = getAccessor<glm::vec4>(attr.type);
+                    for(size_t v = 0; v < vertexCount; ++v) {
+                        accessor.set(v, glm::make_vec4(&data[0] + v * components + c));
+                    }
+                    break;
+                }
+            }
+            c += attr.num;
+        }
+
+        return 0;
+    }
+
+    int setVertices(lua_State* L) {
+        if(!lua_istable(L, 1)) luaL_typerror(L, 1, "table");
+        return setVerticesInternal(L, 1);
+    }
+
+    static int newMesh(lua_State* L) {
+        // mode, vertexFormat
+        // mode, vertexFormat, vertices, (usage)
+        // mode, vertexFormat, vertexCount, (usage)
+        
+        kaun::Mesh::DrawMode mode = meshDrawMode.check(L, 1);
+        VertexFormatWrapper* format = lb::Userdata::get<VertexFormatWrapper>(L, 2, true);
+        kaun::UsageHint usage = kaun::UsageHint::STATIC;
+        if(usageHint.is(L, 4)) usage = usageHint.check(L, 4);
+
+        MeshWrapper* mesh = reinterpret_cast<MeshWrapper*>(new kaun::Mesh(mode));
+        
+        int nargs = lua_gettop(L);
+        if(nargs == 2) {
+            mesh->addVertexBuffer(*format, usage);
+        } else if(nargs >= 3) {
+            if(lua_isnumber(L, 3)) {
+                int vertexCount = luaL_checkint(L, 3);
+                mesh->addVertexBuffer(*format, vertexCount, usage);
+            } else if(lua_istable(L, 3)) {
+                int vertexCount = lua_objlen(L, 3);
+                mesh->addVertexBuffer(*format, vertexCount, usage);
+                mesh->setVerticesInternal(L, 3);
+            } else {
+                luaL_typerror(L, 3, "table or integer");
+            }
+        }
+
+        pushWithGC(L, mesh);
+        return 1;
+    }
+
     static int newBoxMesh(lua_State* L) {
         int args = lua_gettop(L);
         if(args == 3 || args == 4) {
@@ -388,7 +664,13 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addFunction("setPosition", &TransformWrapper::setPosition)
         .addCFunction("getPosition", &TransformWrapper::getPosition)
         .addFunction("rotate", &TransformWrapper::rotate)
+        .addFunction("rotateWorld", &TransformWrapper::rotateWorld)
+        .addCFunction("localDirToWorld", &TransformWrapper::localDirToWorld)
+        .addCFunction("lookAt", &TransformWrapper::lookAt)
         .addCFunction("lookAtPos", &TransformWrapper::lookAtPos)
+        .addCFunction("getForward", &TransformWrapper::getForward)
+        .addCFunction("getUp", &TransformWrapper::getUp)
+        .addCFunction("getRight", &TransformWrapper::getRight)
         .endClass()
         .addFunction("newTransform", TransformWrapper::newTransform)
 
@@ -400,9 +682,15 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addFunction("newTrashP", Trash::newTrashP)
         .addCFunction("newTrashS", Trash::newTrashS)
 
+        .beginClass<VertexFormatWrapper>("VertexFormat")
+        .endClass()
+        .addCFunction("newVertexFormat", VertexFormatWrapper::newVertexFormat)
+
         .beginClass<MeshWrapper>("Mesh")
+        .addCFunction("setVertices", &MeshWrapper::setVertices)
         .endClass()
         .addCFunction("newBoxMesh", MeshWrapper::newBoxMesh)
+        .addCFunction("newMesh", MeshWrapper::newMesh)
 
         .beginClass<ShaderWrapper>("Shader")
         .endClass()

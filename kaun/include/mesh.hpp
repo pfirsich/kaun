@@ -57,6 +57,12 @@ namespace kaun {
             return vBuf;
         }
 
+        std::vector<VertexBuffer*> getVertexBuffers() {
+            std::vector<VertexBuffer*> buffers;
+            for(auto& buffer : mVertexBuffers) buffers.push_back(buffer.get());
+            return buffers;
+        }
+
         // returns nullptr if the given attribute is not present in any vertexbuffer
         VertexBuffer* hasAttribute(AttributeType attrType) const;
 
