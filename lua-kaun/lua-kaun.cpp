@@ -46,59 +46,8 @@ std::pair<const uint8_t*, int> getFileData(lua_State* L, const char* filename) {
         const uint8_t* fileData = reinterpret_cast<uint8_t*>(lua_touserdata(L, -2));
         int fileSize = luaL_checkint(L, -1);
         return std::make_pair(fileData, fileSize);
-    } 
+    }
 }
-
-template <typename T>
-class LuaEnum {
-private:
-    std::string name;
-    std::unordered_map<std::string, T> valueMap;
-
-public:
-    LuaEnum(const std::string& name, const std::unordered_map<std::string, T>& valueMap) :
-            name(name), valueMap(valueMap) {}
-
-    std::string getName() const { return name; }
-    const std::unordered_map<std::string, T> getValueMap() const { return valueMap; }
-    
-    const std::vector<std::string> getValues() const {
-        std::vector<std::string> values;
-        for(auto value : valueMap) {
-            values.push_back(value.first);
-        }
-        return values;
-    }
-
-    std::string getValueString() const {
-        std::stringstream s;
-        bool first = true;
-        for(auto value : valueMap) {
-            s << (first ? "'" : ", '") << value.first << "'";
-            first = false;
-        }
-        return s.str();
-    }
-
-    bool is(lua_State* L, int idx) {
-        return lua_isstring(L, idx) && valueMap.find(lua_tostring(L, idx)) != valueMap.end();
-    }
-
-    T check(lua_State* L, int idx) {
-        if(!lua_isstring(L, idx)) {
-            luaL_error(L, "Invalid %s, expected one of: %s", name.c_str(), getValueString().c_str());
-            return T();
-        }
-        const char* value = luaL_checklstring(L, idx, nullptr);
-        auto it = valueMap.find(value);
-        if(it == valueMap.end()) {
-            luaL_error(L, "Invalid %s '%s': expected one of %s", name.c_str(), value, getValueString().c_str());
-            return T();
-        } else {
-            return it->second;
-        }
-    }
-};
 
 struct TransformWrapper : public kaun::Transform {
     void setPosition(float x, float y, float z) {
@@ -296,9 +245,9 @@ struct MeshWrapper : public kaun::Mesh {
         std::vector<float> data;
         for(size_t v = 1; v <= vertexCount; ++v) {
             lua_rawgeti(L, idx, v);
-            if(!lua_istable(L, -1)) 
+            if(!lua_istable(L, -1))
                 luaL_error(L, "Each vertex has to be a table");
-            if(lua_objlen(L, -1) != components) 
+            if(lua_objlen(L, -1) != components)
                 luaL_error(L, "Each vertex table needs a number of values equal to the number of components in the vertex format (here: %d)", components);
 
             for(int i = 1; i <= components; ++i) {
@@ -306,7 +255,7 @@ struct MeshWrapper : public kaun::Mesh {
                 data.push_back(luax_check<float>(L, -1));
                 lua_pop(L, 1);
             }
-            
+
             lua_pop(L, 1);
         }
 
@@ -357,14 +306,14 @@ struct MeshWrapper : public kaun::Mesh {
         // mode, vertexFormat
         // mode, vertexFormat, vertices, (usage)
         // mode, vertexFormat, vertexCount, (usage)
-        
+
         kaun::Mesh::DrawMode mode = meshDrawMode.check(L, 1);
         VertexFormatWrapper* format = lb::Userdata::get<VertexFormatWrapper>(L, 2, true);
         kaun::UsageHint usage = kaun::UsageHint::STATIC;
         if(usageHint.is(L, 4)) usage = usageHint.check(L, 4);
 
         MeshWrapper* mesh = reinterpret_cast<MeshWrapper*>(new kaun::Mesh(mode));
-        
+
         int nargs = lua_gettop(L);
         if(nargs == 2) {
             mesh->addVertexBuffer(*format, usage);
@@ -403,6 +352,25 @@ struct MeshWrapper : public kaun::Mesh {
             return 0;
         }
     }
+
+    static int newPlaneMesh(lua_State* L) {
+        int nargs = lua_gettop(L);
+        float width = luax_check<float>(L, 1);
+        float depth = luax_check<float>(L, 2);
+        int segmentsX = 1;
+        int segmentsZ = 1;
+        if(nargs >= 3) {
+            segmentsZ = segmentsX = luaL_checkint(L, 3);
+            if(nargs >= 4) segmentsZ = luaL_checkint(L, 4);
+        }
+        if(nargs >= 5) {
+            VertexFormatWrapper* format = lb::Userdata::get<VertexFormatWrapper>(L, 5, true);
+            pushWithGC(L, reinterpret_cast<MeshWrapper*>(kaun::Mesh::plane(width, depth, segmentsX, segmentsZ, *format)));
+        } else {
+            pushWithGC(L, reinterpret_cast<MeshWrapper*>(kaun::Mesh::plane(width, depth, segmentsX, segmentsZ, kaun::defaultVertexFormat)));
+        }
+        return 1;
+    }
 };
 
 struct ShaderWrapper : public kaun::Shader {
@@ -418,11 +386,198 @@ struct ShaderWrapper : public kaun::Shader {
     }
 };
 
-struct RenderStateWrapper : public kaun::RenderState {
+LuaEnum<kaun::RenderState::DepthFunc> depthFunc("depth func", {
+    {"disabled", kaun::RenderState::DepthFunc::DISABLED},
+    {"never", kaun::RenderState::DepthFunc::NEVER},
+    {"less", kaun::RenderState::DepthFunc::LESS},
+    {"equal", kaun::RenderState::DepthFunc::EQUAL},
+    {"lequal", kaun::RenderState::DepthFunc::LEQUAL},
+    {"greater", kaun::RenderState::DepthFunc::GREATER},
+    {"notequal", kaun::RenderState::DepthFunc::NOTEQUAL},
+    {"gequal", kaun::RenderState::DepthFunc::GEQUAL},
+    {"always", kaun::RenderState::DepthFunc::ALWAYS},
+});
 
+LuaEnum<kaun::RenderState::FaceDirections> faceDirections("face direction", {
+    {"none", kaun::RenderState::FaceDirections::NONE},
+    {"front", kaun::RenderState::FaceDirections::FRONT},
+    {"back", kaun::RenderState::FaceDirections::BACK},
+});
+
+LuaEnum<kaun::RenderState::FaceOrientation> faceOrientation("face winding", {
+    {"cw", kaun::RenderState::FaceOrientation::CW},
+    {"ccw", kaun::RenderState::FaceOrientation::CCW},
+});
+
+LuaEnum<kaun::RenderState::BlendFactor> blendFactor("blend factor", {
+    {"zero", kaun::RenderState::BlendFactor::ZERO},
+    {"one", kaun::RenderState::BlendFactor::ONE},
+    {"src_color", kaun::RenderState::BlendFactor::SRC_COLOR},
+    {"one_minus_src_color", kaun::RenderState::BlendFactor::ONE_MINUS_SRC_COLOR},
+    {"dst_color", kaun::RenderState::BlendFactor::DST_COLOR},
+    {"one_minus_dst_color", kaun::RenderState::BlendFactor::ONE_MINUS_DST_COLOR},
+    {"src_alpha", kaun::RenderState::BlendFactor::SRC_ALPHA},
+    {"one_minus_src_alpha", kaun::RenderState::BlendFactor::ONE_MINUS_SRC_ALPHA},
+    {"dst_alpha", kaun::RenderState::BlendFactor::DST_ALPHA},
+    {"one_minus_dst_alpha", kaun::RenderState::BlendFactor::ONE_MINUS_DST_ALPHA},
+    {"constant_color", kaun::RenderState::BlendFactor::CONSTANT_COLOR},
+    {"one_minus_constant_color", kaun::RenderState::BlendFactor::ONE_MINUS_CONSTANT_COLOR},
+    {"constant_alpha", kaun::RenderState::BlendFactor::CONSTANT_ALPHA},
+    {"one_minus_constant_alpha", kaun::RenderState::BlendFactor::ONE_MINUS_CONSTANT_ALPHA},
+});
+
+LuaEnum<kaun::RenderState::BlendEq> blendEquation("blend equation", {
+    {"add", kaun::RenderState::BlendEq::ADD},
+    {"subtract", kaun::RenderState::BlendEq::SUBTRACT},
+    {"reverse_subtract", kaun::RenderState::BlendEq::REVERSE_SUBTRACT},
+    {"min", kaun::RenderState::BlendEq::MIN},
+    {"max", kaun::RenderState::BlendEq::MAX},
+});
+
+enum class BlendingMode {
+    DISABLED,
+    ALPHA,
+    ADDITIVE,
+    SCREEN,
 };
 
+LuaEnum<BlendingMode> blendingMode("blending mode", {
+    {"replace", BlendingMode::DISABLED},
+    {"alpha", BlendingMode::ALPHA},
+    {"additive", BlendingMode::ADDITIVE},
+    {"screen", BlendingMode::SCREEN},
+});
+
+struct RenderStateWrapper : public kaun::RenderState {
+    int setDepthWrite(lua_State* L) {
+        RenderState::setDepthWrite(luax_check<bool>(L, 2));
+        return 0;
+    }
+
+    int getDepthTest(lua_State* L) {
+        lua_pushstring(L, depthFunc.getValue(RenderState::getDepthTest()).c_str());
+        return 1;
+    }
+
+    int setDepthTest(lua_State* L) {
+        RenderState::setDepthTest(depthFunc.check(L, 2));
+        return 0;
+    }
+
+    int setBlendEnabled(lua_State* L) {
+        RenderState::setBlendEnabled(luax_check<bool>(L, 2));
+        return 0;
+    }
+
+    int getBlendFactors(lua_State* L) {
+        auto factors = RenderState::getBlendFactors();
+        lua_pushstring(L, blendFactor.getValue(factors.first).c_str());
+        lua_pushstring(L, blendFactor.getValue(factors.second).c_str());
+        return 2;
+    }
+
+    int setBlendFactors(lua_State* L) {
+        RenderState::setBlendFactors(blendFactor.check(L, 2), blendFactor.check(L, 3));
+        return 0;
+    }
+
+    int getCullFaces(lua_State* L) {
+        lua_pushstring(L, faceDirections.getValue(RenderState::getCullFaces()).c_str());
+        return 1;
+    }
+
+    int setCullFaces(lua_State* L) {
+        RenderState::setCullFaces(faceDirections.check(L, 2));
+        return 0;
+    }
+
+    int setBlending(lua_State* L) {
+        BlendingMode mode = blendingMode.check(L, 2);
+        switch(mode) {
+            case BlendingMode::DISABLED:
+                RenderState::setBlendEnabled(false);
+                break;
+            case BlendingMode::ALPHA:
+                RenderState::setBlendEnabled(true);
+                RenderState::setBlendEquation(RenderState::BlendEq::ADD);
+                RenderState::setBlendFactors(RenderState::BlendFactor::SRC_ALPHA,
+                                             RenderState::BlendFactor::ONE_MINUS_SRC_ALPHA);
+                break;
+            case BlendingMode::ADDITIVE:
+                RenderState::setBlendEnabled(true);
+                RenderState::setBlendEquation(RenderState::BlendEq::ADD);
+                RenderState::setBlendFactors(RenderState::BlendFactor::SRC_ALPHA,
+                                             RenderState::BlendFactor::ONE);
+                break;
+            case BlendingMode::SCREEN:
+                RenderState::setBlendEnabled(true);
+                RenderState::setBlendEquation(RenderState::BlendEq::ADD);
+                RenderState::setBlendFactors(RenderState::BlendFactor::SRC_ALPHA,
+                                             RenderState::BlendFactor::ONE_MINUS_SRC_COLOR);
+                break;
+        }
+        return 0;
+    }
+
+    static int newRenderState(lua_State* L) {
+        RenderStateWrapper* state = new RenderStateWrapper;
+        pushWithGC(L, state);
+        return 1;
+    }
+};
+
+LuaEnum<kaun::Texture::WrapMode> wrapMode("wrap mode", {
+    {"clamp_to_edge", kaun::Texture::WrapMode::CLAMP_TO_EDGE},
+    {"clamp_to_border", kaun::Texture::WrapMode::CLAMP_TO_BORDER},
+    {"mirrored_repeat", kaun::Texture::WrapMode::MIRRORED_REPEAT},
+    {"repeat", kaun::Texture::WrapMode::REPEAT},
+});
+
+LuaEnum<kaun::Texture::MinFilter> minFilter("min filter", {
+    {"nearest", kaun::Texture::MinFilter::NEAREST},
+    {"linear", kaun::Texture::MinFilter::LINEAR},
+    {"nearest_mipmap_nearest", kaun::Texture::MinFilter::NEAREST_MIPMAP_NEAREST},
+    {"linear_mipmap_nearest", kaun::Texture::MinFilter::LINEAR_MIPMAP_NEAREST},
+    {"nearest_mipmap_linear", kaun::Texture::MinFilter::NEAREST_MIPMAP_LINEAR},
+    {"linear_mipmap_linear", kaun::Texture::MinFilter::LINEAR_MIPMAP_LINEAR},
+});
+
+LuaEnum<kaun::Texture::MagFilter> magFilter("mag filter", {
+    {"nearest", kaun::Texture::MagFilter::NEAREST},
+    {"linear", kaun::Texture::MagFilter::LINEAR},
+});
+
 struct TextureWrapper : public kaun::Texture {
+    int getDimensions(lua_State* L) {
+        lua_pushinteger(L, Texture::getWidth());
+        lua_pushinteger(L, Texture::getHeight());
+        return 2;
+    }
+
+    int getWrap(lua_State* L) {
+        auto wrap = Texture::getWrap();
+        lua_pushstring(L, wrapMode.getValue(wrap.first).c_str());
+        lua_pushstring(L, wrapMode.getValue(wrap.second).c_str());
+        return 2;
+    }
+
+    int setWrap(lua_State* L) {
+        Texture::setWrap(wrapMode.check(L, 2), wrapMode.check(L, 3));
+        return 0;
+    }
+
+    int getFilter(lua_State* L) {
+        lua_pushstring(L, minFilter.getValue(Texture::getMinFilter()).c_str());
+        lua_pushstring(L, magFilter.getValue(Texture::getMagFilter()).c_str());
+        return 2;
+    }
+
+    int setFilter(lua_State* L) {
+        Texture::setMinFilter(minFilter.check(L, 2));
+        Texture::setMagFilter(magFilter.check(L, 3));
+        return 0;
+    }
+
     static int newTexture(lua_State* L) {
         const char* path = luaL_checklstring(L, 1, nullptr);
         auto fileData = getFileData(L, path);
@@ -627,10 +782,10 @@ void flush() {
 
 LoveGlState loveState;
 
-// As it is now, we only do a bunch of glGet in endLoveGraphics, 
-// which is mostly called right before love.graphics.present 
+// As it is now, we only do a bunch of glGet in endLoveGraphics,
+// which is mostly called right before love.graphics.present
 // i.e. before buffers are swapped.
-// Bufferswaps usually involve syncing too (glFinish-like?), 
+// Bufferswaps usually involve syncing too (glFinish-like?),
 // so that the hit we take from the sync (glFlush-like) induced by glGet
 // is lessened.
 
@@ -689,17 +844,38 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .beginClass<MeshWrapper>("Mesh")
         .addCFunction("setVertices", &MeshWrapper::setVertices)
         .endClass()
-        .addCFunction("newBoxMesh", MeshWrapper::newBoxMesh)
         .addCFunction("newMesh", MeshWrapper::newMesh)
+        .addCFunction("newBoxMesh", MeshWrapper::newBoxMesh)
+        .addCFunction("newPlaneMesh", MeshWrapper::newPlaneMesh)
 
         .beginClass<ShaderWrapper>("Shader")
         .endClass()
         .addCFunction("newShader", ShaderWrapper::newShader)
 
         .beginClass<TextureWrapper>("Texture")
+        .addFunction("getWidth", &kaun::Texture::getWidth)
+        .addFunction("getHeight", &kaun::Texture::getHeight)
+        .addCFunction("getDimensions", &TextureWrapper::getDimensions)
+        .addCFunction("getWrap", &TextureWrapper::getWrap)
+        .addCFunction("setWrap", &TextureWrapper::setWrap)
+        .addCFunction("getFilter", &TextureWrapper::getFilter)
+        .addCFunction("setFilter", &TextureWrapper::setFilter)
         .endClass()
         .addCFunction("newTexture", TextureWrapper::newTexture)
         .addCFunction("newCheckerTexture", TextureWrapper::newCheckerTexture)
+
+        .beginClass<RenderStateWrapper>("RenderState")
+        .addFunction("getDepthWrite", &kaun::RenderState::getDepthWrite)
+        .addCFunction("setDepthWrite", &RenderStateWrapper::setDepthWrite)
+        .addCFunction("getDepthTest", &RenderStateWrapper::getDepthTest)
+        .addCFunction("setDepthTest", &RenderStateWrapper::setDepthTest)
+        .addFunction("getBlendEnabled", &kaun::RenderState::getBlendEnabled)
+        .addCFunction("setBlendEnabled", &RenderStateWrapper::setBlendEnabled)
+        .addCFunction("getBlendFactors", &RenderStateWrapper::getBlendFactors)
+        .addCFunction("setBlendFactors", &RenderStateWrapper::setBlendFactors)
+        .addCFunction("setBlending", &RenderStateWrapper::setBlending)
+        .endClass()
+        .addCFunction("newRenderState", RenderStateWrapper::newRenderState)
 
         .addCFunction("clear", clear)
         .addCFunction("clearDepth", clearDepth)
