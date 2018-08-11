@@ -345,6 +345,10 @@ int draw(lua_State* L) {
     return 0;
 }
 
+void flush() {
+    kaun::flush();
+}
+
 LoveGlState loveState;
 
 // As it is now, we only do a bunch of glGet in endLoveGraphics, 
@@ -416,7 +420,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addFunction("setViewTransform", setViewTransform)
         .addFunction("setModelTransform", setModelTransform)
         .addCFunction("draw", draw)
-        .addFunction("flush", kaun::flush)
+        .addFunction("flush", flush)
 
         .addFunction("beginLoveGraphics", beginLoveGraphics)
         .addFunction("endLoveGraphics", endLoveGraphics)

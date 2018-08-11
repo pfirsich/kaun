@@ -31,7 +31,12 @@ namespace kaun {
     extern void draw(Mesh& mesh, Shader& shader, const std::vector<Uniform>& uniforms,
                      const RenderState& state = defaultRenderState);
 
-    extern void flush(/*sortFunction - pointer/enum?*/);
+    enum class SortType {
+        DEFAULT, // sort by shader, textures, etc.
+        SUBMISSION, // sort by order of submission 
+    };
+
+    extern void flush(SortType sortType = SortType::DEFAULT);
 
     extern void ensureGlState();
 }

@@ -94,8 +94,23 @@ namespace kaun {
         Uniform(const std::string& name, const glm::vec4& val) :
             mName(name), mType(Type::VEC4F), mCount(1) { copyData(glm::value_ptr(val)); }
 
-        Uniform(const std::string& name, const glm::vec4* vals, size_t count = 1) :
-            mName(name), mType(Type::VEC4F), mCount(count) { copyData(glm::value_ptr(vals[0])); }
+        Uniform(const std::string& name, const glm::ivec2& val) :
+            mName(name), mType(Type::VEC2I), mCount(1) { copyData(glm::value_ptr(val)); }
+
+        Uniform(const std::string& name, const glm::ivec2* vals, size_t count = 1) :
+            mName(name), mType(Type::VEC2I), mCount(count) { copyData(glm::value_ptr(vals[0])); }
+
+        Uniform(const std::string& name, const glm::ivec3& val) :
+            mName(name), mType(Type::VEC3I), mCount(1) { copyData(glm::value_ptr(val)); }
+
+        Uniform(const std::string& name, const glm::ivec3* vals, size_t count = 1) :
+            mName(name), mType(Type::VEC3I), mCount(count) { copyData(glm::value_ptr(vals[0])); }
+
+        Uniform(const std::string& name, const glm::ivec4& val) :
+            mName(name), mType(Type::VEC4I), mCount(1) { copyData(glm::value_ptr(val)); }
+
+        Uniform(const std::string& name, const glm::ivec4* vals, size_t count = 1) :
+            mName(name), mType(Type::VEC4I), mCount(count) { copyData(glm::value_ptr(vals[0])); }
 
         Uniform(const std::string& name, const glm::mat2& val) :
             mName(name), mType(Type::MAT2), mCount(1) { copyData(glm::value_ptr(val)); }
@@ -125,6 +140,8 @@ namespace kaun {
         Uniform& operator=(const Uniform& other) = default;
 
         const std::string& getName() const { return mName; }
+        Type getType() const { return mType; }
+        int getCount() const { return mCount; }
 
         void set(Shader::UniformLocation loc) const {
             int c = mCount;

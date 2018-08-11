@@ -8,7 +8,9 @@ kaun.setViewTransform(cameraTrafo)
 local shader = kaun.newShader(shaders.frag, shaders.vert)
 
 local mesh = kaun.newBoxMesh(1, 1, 1)
-local meshTrafo = kaun.newTransform()
+local meshTrafo1 = kaun.newTransform()
+local meshTrafo2 = kaun.newTransform()
+meshTrafo2:setPosition(1, 0, -1)
 
 --local texture = kaun.newCheckerTexture(512, 512, 64)
 local texture = kaun.newTexture("crate.png")
@@ -23,15 +25,21 @@ function love.resize(w, h)
 end
 
 function love.update(dt)
-    meshTrafo:rotate(dt, 0, 1, 0)
+    meshTrafo1:rotate(dt, 0, 1, 0)
+    meshTrafo2:rotate(dt, 0, 1, 0)
 end
 
 function love.draw()
     kaun.clear()
     kaun.clearDepth()
 
-    kaun.setModelTransform(meshTrafo)
+    kaun.setModelTransform(meshTrafo2)
+    kaun.draw(mesh, shader, {
+        color = {1, 0, 1, 1},
+        baseTexture = texture,
+    })
 
+    kaun.setModelTransform(meshTrafo1)
     kaun.draw(mesh, shader, {
         color = {1, 1, 1, 1},
         baseTexture = texture,

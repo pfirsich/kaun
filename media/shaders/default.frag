@@ -2,7 +2,6 @@ in VSOUT {
     vec2 texCoord;
     vec3 normal;
     vec3 worldPos;
-    vec3 worldNormal;
     vec3 eye;
 } vsOut;
 

@@ -1,6 +1,9 @@
 #include <vector>
+#include <algorithm>
 
 #include <glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
 
 #include "render.hpp"
 
@@ -183,7 +186,11 @@ namespace kaun {
     }
 
     glm::mat4 projectionMatrix;
+    glm::mat4 invProjectionMatrix;
     glm::mat4 viewMatrix;
+    glm::mat4 invViewMatrix;
+    glm::mat4 viewProjectionMatrix;
+    glm::mat4 invViewProjectionMatrix;
     glm::mat4 modelMatrix;
     glm::mat3 normalMatrix;
 
@@ -192,23 +199,36 @@ namespace kaun {
         Shader* shader;
         std::vector<Uniform> uniforms;
         RenderState renderState;
+        float depth;
+        uint64_t sortKey;
 
         RenderQueueEntry(Mesh* mesh, Shader* shader, const RenderState& renderState) :
-                mesh(mesh), shader(shader), renderState(renderState) {}
+                mesh(mesh), shader(shader), renderState(renderState), sortKey(0) {}
     };
 
     std::vector<RenderQueueEntry> renderQueue;
 
+    void updateViewProjection() {
+        viewProjectionMatrix = projectionMatrix * viewMatrix;
+        invViewProjectionMatrix = invViewMatrix * invProjectionMatrix;
+    }
+
     void setProjection(const glm::mat4& matrix) {
         projectionMatrix = matrix;
+        invProjectionMatrix = glm::inverse(projectionMatrix);
+        updateViewProjection();
     }
 
     void setViewMatrix(const glm::mat4& view) {
         viewMatrix = view;
+        invViewMatrix = glm::inverse(viewMatrix);
+        updateViewProjection();
     }
 
     void setViewTransform(const Transform& viewTransform) {
-        viewMatrix = glm::inverse(viewTransform.getMatrix());
+        invViewMatrix = viewTransform.getMatrix();
+        viewMatrix = glm::inverse(invViewMatrix);
+        updateViewProjection();
     }
 
     void setModelMatrix(const glm::mat4& model) {
@@ -223,22 +243,53 @@ namespace kaun {
     void draw(Mesh& mesh, Shader& shader, const std::vector<Uniform>& uniforms, const RenderState& state) {
 		renderQueue.emplace_back(&mesh, &shader, state);
 		RenderQueueEntry& entry = renderQueue.back();
-        entry.uniforms = uniforms;
-        //entry.uniforms.emplace_back("kaun_viewport", viewport);
+
+        glm::mat4 modelViewMatrix = viewMatrix * modelMatrix;
+        glm::mat4 modelViewProjectionMatrix = viewProjectionMatrix * modelMatrix;
+        glm::vec4 projected = modelViewProjectionMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+        entry.depth = projected.z / projected.w;
+
+        // insert built-in uniforms first, so we know where to find them in the vector
+        entry.uniforms.emplace_back("kaun_viewport", viewport);
         entry.uniforms.emplace_back("kaun_view", viewMatrix);
-        //entry.uniforms.emplace_back("kaun_invView", );
+        entry.uniforms.emplace_back("kaun_invView", invViewMatrix);
         entry.uniforms.emplace_back("kaun_projection", projectionMatrix);
-        //entry.uniforms.emplace_back("kaun_invProjection", );
-        //entry.uniforms.emplace_back("kaun_viewProjection", );
-        //entry.uniforms.emplace_back("kaun_invViewProjection", );
+        entry.uniforms.emplace_back("kaun_invProjection", invProjectionMatrix);
+        entry.uniforms.emplace_back("kaun_viewProjection", viewProjectionMatrix);
+        entry.uniforms.emplace_back("kaun_invViewProjection", invViewProjectionMatrix);
         entry.uniforms.emplace_back("kaun_model", modelMatrix);
         entry.uniforms.emplace_back("kaun_normal", normalMatrix);
-        //entry.uniforms.emplace_back("kaun_modelView", );
-        //entry.uniforms.emplace_back("kaun_modelViewProjection", );
+        entry.uniforms.emplace_back("kaun_modelView", modelViewMatrix);
+        entry.uniforms.emplace_back("kaun_modelViewProjection", modelViewProjectionMatrix);
+
+        entry.uniforms.reserve(entry.uniforms.size() + uniforms.size());
+        entry.uniforms.insert(entry.uniforms.end(), uniforms.begin(), uniforms.end());
     }
 
-    void flush() {
-        // sort here!
+    bool entryCompare(const RenderQueueEntry& a, const RenderQueueEntry& b) {
+        return a.sortKey < b.sortKey;
+    }
+
+    uint64_t defaultSortKey(const RenderQueueEntry& entry) {
+        // draw opaque geometry first => translucencyType = 0
+        uint64_t translucencyType = entry.renderState.getBlendEnabled() ? 1 : 0;
+        uint64_t shader = entry.shader->getProgramObject();
+        uint64_t depth = static_cast<uint64_t>(entry.depth * 0xFFFFFF);
+        if(translucencyType > 0) depth = 0xFFFFFF - depth;
+        return (translucencyType << 63) | (shader & 0xFFFFFF) << 24 | depth;
+    }
+
+    void flush(SortType sortType) {
+        switch(sortType) {
+            case SortType::DEFAULT:
+                for(auto& entry : renderQueue) entry.sortKey = defaultSortKey(entry);
+                std::sort(renderQueue.begin(), renderQueue.end(), entryCompare);
+                break;
+            case SortType::SUBMISSION:
+                // don't do anything
+                break;
+        }
+
         for(auto& entry : renderQueue) {
             entry.renderState.apply();
             entry.shader->bind();
@@ -251,7 +302,7 @@ namespace kaun {
         }
         renderQueue.clear();
     }
-    
+
     void ensureGlState() {
         RenderState::ensureGlState();
         Shader::ensureGlState();
