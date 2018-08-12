@@ -33,6 +33,7 @@ namespace kaun {
             for(size_t i = 0; i < attributes.size(); ++i) {
                 const auto& attr = attributes[i];
                 int location = static_cast<int>(attr.type);
+                // this saves the ARRAY_BUFFER binding
                 glEnableVertexAttribArray(location);
                 glVertexAttribPointer(location, attr.alignedNum, static_cast<GLenum>(attr.dataType),
                                       attr.normalized ? GL_TRUE : GL_FALSE,
@@ -41,17 +42,13 @@ namespace kaun {
             }
         }
 
-        // for ARRAY_BUFFER only the calls to glEnableVertexAttribArray/glEnableVertexPointer are stored
-        // so unbind now.
-        mVertexBuffers.back()->unbind();
-
         if(mIndexBuffer != nullptr) mIndexBuffer->bind();
 
         glBindVertexArray(0);
         currentVAO = 0;
 
-        // VAO stores the last bound ELEMENT_BUFFER state, so as soon as the VAO is unbound, unbind the VBO
-        if(mIndexBuffer != nullptr) mIndexBuffer->unbind();
+        VertexBuffer::unbind();
+        IndexBuffer::unbind();
     }
 
     void Mesh::draw(size_t instanceCount) {

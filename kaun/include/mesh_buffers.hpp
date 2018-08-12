@@ -64,10 +64,6 @@ namespace kaun {
             if(mUploadCount == 0) upload();
             glBindBuffer(mTarget, mBufferObject);
         }
-
-        void unbind() const {
-            glBindBuffer(mTarget, 0);
-        }
     };
 
 
@@ -103,6 +99,10 @@ namespace kaun {
 
         size_t getNumVertices() const { return mNumVertices; }
         const VertexFormat& getVertexFormat() const { return mVertexFormat; }
+
+        static void unbind() {
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
     };
 
 
@@ -157,5 +157,9 @@ namespace kaun {
         uint32_t get(size_t index) const;
 
         void set(size_t index, uint32_t val);
+
+        static void unbind() {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        }
     };
 }
