@@ -54,6 +54,10 @@ public:
         }
         return "";
     }
+
+    void push(lua_State* L, T t) {
+        lua_pushstring(L, getValue(t).c_str());
+    }
 };
 
 template <typename T>

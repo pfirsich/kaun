@@ -476,7 +476,7 @@ struct RenderStateWrapper : public kaun::RenderState {
     }
 
     int getDepthTest(lua_State* L) {
-        lua_pushstring(L, depthFunc.getValue(RenderState::getDepthTest()).c_str());
+        depthFunc.push(L, RenderState::getDepthTest());
         return 1;
     }
 
@@ -492,8 +492,8 @@ struct RenderStateWrapper : public kaun::RenderState {
 
     int getBlendFactors(lua_State* L) {
         auto factors = RenderState::getBlendFactors();
-        lua_pushstring(L, blendFactor.getValue(factors.first).c_str());
-        lua_pushstring(L, blendFactor.getValue(factors.second).c_str());
+        blendFactor.push(L, factors.first);
+        blendFactor.push(L, factors.second);
         return 2;
     }
 
@@ -503,13 +503,23 @@ struct RenderStateWrapper : public kaun::RenderState {
     }
 
     int getCullFaces(lua_State* L) {
-        lua_pushstring(L, faceDirections.getValue(RenderState::getCullFaces()).c_str());
+        faceDirections.push(L, RenderState::getCullFaces());
         return 1;
     }
 
     int setCullFaces(lua_State* L) {
         RenderState::setCullFaces(faceDirections.check(L, 2));
         return 0;
+    }
+
+    int setFrontFace(lua_State* L) {
+        RenderState::setFrontFace(faceOrientation.check(L, 2));
+        return 0;
+    }
+
+    int getFrontFace(lua_State* L) {
+        faceOrientation.push(L, RenderState::getFrontFace());
+        return 1;
     }
 
     int setBlending(lua_State* L) {
@@ -908,6 +918,10 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("setDepthWrite", &RenderStateWrapper::setDepthWrite)
         .addCFunction("getDepthTest", &RenderStateWrapper::getDepthTest)
         .addCFunction("setDepthTest", &RenderStateWrapper::setDepthTest)
+        .addCFunction("setCullFaces", &RenderStateWrapper::setCullFaces)
+        .addCFunction("getCullFaces", &RenderStateWrapper::getCullFaces)
+        .addCFunction("getFrontFace", &RenderStateWrapper::getFrontFace)
+        .addCFunction("setFrontFace", &RenderStateWrapper::setFrontFace)
         .addFunction("getBlendEnabled", &kaun::RenderState::getBlendEnabled)
         .addCFunction("setBlendEnabled", &RenderStateWrapper::setBlendEnabled)
         .addCFunction("getBlendFactors", &RenderStateWrapper::getBlendFactors)
