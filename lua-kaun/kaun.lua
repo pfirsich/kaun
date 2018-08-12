@@ -64,8 +64,17 @@ function love.run()
     end
 end
 
+local origSetMode = love.window.setMode
 function love.window.setMode()
     error("setMode recreates the OpenGL context and kaun can not recover from this. Please do all setMode calls before importing kaun.")
+end
+
+-- apparently in 11.1 love has it's own errorhandler at love.errhand,
+-- but you are supposed to define love.errorhandler
+function love.errorhandler(msg)
+    kaun.beginLoveGraphics()
+    love.window.setMode = origSetMode
+    return love.errhand(msg)
 end
 
 -- vvvvvvvv DO NOT REMOVE vvvvvvvv
