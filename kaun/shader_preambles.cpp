@@ -44,8 +44,15 @@ uniform mat4 kaun_modelViewProjection;
 
 std::string kaun::Shader::fragmentShaderPreamble = R"(
 #define FRAGMENT
+#line 1
 )";
 
 std::string kaun::Shader::vertexShaderPreamble = R"(
 #define VERTEX
+#line 1
+)";
+
+std::string kaun::Shader::geometryShaderPreamble = R"(
+#define GEOMETRY
+#line 1
 )";

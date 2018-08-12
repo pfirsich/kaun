@@ -390,17 +390,27 @@ struct MeshWrapper : public kaun::Mesh {
 };
 
 struct ShaderWrapper : public kaun::Shader {
+    static int compileAndLink(lua_State* L, ShaderWrapper* shader, const char* vertStr, const char* fragStr, const char* geomStr = nullptr) {
+        if(!shader->compileString(vertStr, kaun::Shader::Type::VERTEX)) return luaL_error(L, "Could not compile vertex shader. See console for details.");
+        if(!shader->compileString(fragStr, kaun::Shader::Type::FRAGMENT)) return luaL_error(L, "Could not compile fragment shader. See console for details.");
+        if(geomStr && !shader->compileString(geomStr, kaun::Shader::Type::GEOMETRY)) return luaL_error(L, "Could not compile geometry shader. See console for details.");
+        if(!shader->link()) return luaL_error(L, "Could not link shader. See console for details.");
+        return 1;
+    }
+
     static int newShader(lua_State* L) {
         ShaderWrapper* shader = new ShaderWrapper();
-        if(lua_gettop(L) > 1) {
-            const char* fragStr = luaL_checkstring(L, 1);
-            const char* vertStr = luaL_checkstring(L, 2);
-            shader->compileAndLinkStrings(fragStr, vertStr);
+        if(lua_isstring(L, 1) && lua_isstring(L, 2)) {
+            // string, string, [string]
+            const char* vertStr = luaL_checkstring(L, 1);
+            const char* fragStr = luaL_checkstring(L, 2);
+            const char* geomStr = lua_isstring(L, 3) ? luaL_checkstring(L, 3) : nullptr;
+            if(!compileAndLink(L, shader, vertStr, fragStr, geomStr)) return 0;
         } else {
+            // string, [bool = false]
             const char* shaderStr = luaL_checkstring(L, 1);
-            shader->compileString(shaderStr, kaun::Shader::Type::FRAGMENT)
-            && shader->compileString(shaderStr, kaun::Shader::Type::VERTEX)
-            && shader->link();
+            bool geometry = lua_isboolean(L, 2) ? luax_check<bool>(L, 2) : false;
+            if(!compileAndLink(L, shader, shaderStr, shaderStr, geometry ? shaderStr : nullptr)) return 0;
         }
         pushWithGC(L, shader);
         return 1;

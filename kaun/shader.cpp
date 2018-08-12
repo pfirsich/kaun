@@ -38,6 +38,9 @@ namespace kaun {
         } else if(type == Shader::Type::FRAGMENT) {
             GLtype = GL_FRAGMENT_SHADER;
             fullSource = globalShaderPreamble + fragmentShaderPreamble + source;
+        } else if(type == Shader::Type::GEOMETRY) {
+            GLtype = GL_GEOMETRY_SHADER;
+            fullSource = globalShaderPreamble + geometryShaderPreamble + source;
         } else {
             LOG_ERROR("Unknown shader type");
             return false;

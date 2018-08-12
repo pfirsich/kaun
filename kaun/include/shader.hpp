@@ -16,7 +16,8 @@ namespace kaun {
     public:
         enum class Type {
             VERTEX = 1,
-            FRAGMENT = 2
+            FRAGMENT = 2,
+            GEOMETRY = 3,
         };
 
         enum class Status {
@@ -41,6 +42,7 @@ namespace kaun {
         static std::string globalShaderPreamble;
         static std::string fragmentShaderPreamble;
         static std::string vertexShaderPreamble;
+        static std::string geometryShaderPreamble;
 
     public:
         static void ensureGlState();
