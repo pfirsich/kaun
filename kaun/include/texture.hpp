@@ -82,9 +82,9 @@ namespace kaun {
             glDeleteTextures(1, &mTextureObject);
         }
 
-        void loadFromMemory(const uint8_t* buffer, int width, int height, int components, bool genMipmaps = true);
-        bool loadEncodedFromMemory(const uint8_t* encBuffer, int len, bool genMipmaps = true);
-        bool loadFromFile(const std::string& filename, bool genMipmaps = true);
+        void loadFromMemory(const uint8_t* buffer, int width, int height, int components, bool genMipmaps = true, GLenum target = 0, bool replace = false);
+        bool loadEncodedFromMemory(const uint8_t* encBuffer, int len, bool genMipmaps = true, GLenum target = 0);
+        bool loadFromFile(const std::string& filename, bool genMipmaps = true, GLenum target = 0);
         void setStorage(PixelFormat format, int width, int height, int levels = 1);
         void updateData(GLenum format, GLenum type, const void* data, int level = 0, int width = -1, int height = -1, int x = 0, int y = 0);
         // if you've set the base level + data, call this. this can also be called on an immutable texture
@@ -182,5 +182,8 @@ namespace kaun {
         static Texture* checkerBoard(int width, int height, int checkerSize,
                                      const glm::vec4& colA = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f),
                                      const glm::vec4& colB = glm::vec4(0.9f, 0.9f, 0.9f, 1.0f));
+        static Texture* cubeMap(const std::string& posX, const std::string& negX,
+                                const std::string& posY, const std::string& negY,
+                                const std::string& posZ, const std::string& negZ);
     };
 }

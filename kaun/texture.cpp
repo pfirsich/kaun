@@ -43,6 +43,19 @@ namespace kaun {
         return tex;
     }
 
+    Texture* Texture::cubeMap(const std::string& posX, const std::string& negX,
+                              const std::string& posY, const std::string& negY,
+                              const std::string& posZ, const std::string& negZ) {
+        Texture* tex = new Texture(GL_TEXTURE_CUBE_MAP);
+        tex->loadFromFile(posX, true, GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+        tex->loadFromFile(negX, true, GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+        tex->loadFromFile(posY, true, GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+        tex->loadFromFile(negY, true, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+        tex->loadFromFile(posZ, true, GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+        tex->loadFromFile(negZ, true, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+        return tex;
+    }
+
     void Texture::initSampler() {
         glTexParameteri(mTarget, GL_TEXTURE_WRAP_S, static_cast<GLenum>(mSWrap));
         glTexParameteri(mTarget, GL_TEXTURE_WRAP_T, static_cast<GLenum>(mTWrap));
@@ -50,8 +63,9 @@ namespace kaun {
         glTexParameteri(mTarget, GL_TEXTURE_MIN_FILTER, static_cast<GLenum>(mMinFilter));
     }
 
-    void Texture::loadFromMemory(const uint8_t* buffer, int width, int height, int components, bool genMipmaps) {
+    void Texture::loadFromMemory(const uint8_t* buffer, int width, int height, int components, bool genMipmaps, GLenum target, bool replace) {
         assert(components >= 1 && components <= 4);
+        if(target == 0) target = mTarget;
 
         if(mTextureObject == 0) glGenTextures(1, &mTextureObject);
         bind(0);
@@ -60,14 +74,14 @@ namespace kaun {
         GLint internalFormat = internalFormatMap[components-1];
         GLint formatMap[4] = {GL_RED, GL_RG, GL_RGB, GL_RGBA};
         GLint format = formatMap[components-1];
-        if(mImmutable || (width == mWidth && height == mHeight)) {
+        if(mImmutable || (replace && width == mWidth && height == mHeight)) {
             if(mImmutable && (width != mWidth || height != mHeight)) {
                 LOG_ERROR("Loading texture of size %d, %d that does not fit into an immutable texture of size %d, %d", width, height, mWidth, mHeight);
                 return;
             }
-            glTexSubImage2D(mTarget, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, buffer);
+            glTexSubImage2D(target, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, buffer);
         } else {
-            glTexImage2D(mTarget, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, buffer);
+            glTexImage2D(target, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, buffer);
             mPixelFormat = static_cast<PixelFormat>(internalFormat);
             if(genMipmaps) mMinFilter = MinFilter::LINEAR_MIPMAP_LINEAR;
             initSampler();
@@ -79,26 +93,26 @@ namespace kaun {
         mHeight = height;
     }
 
-    bool Texture::loadEncodedFromMemory(const uint8_t* encBuffer, int len, bool genMipmaps) {
+    bool Texture::loadEncodedFromMemory(const uint8_t* encBuffer, int len, bool genMipmaps, GLenum target) {
         int w, h, c;
         unsigned char* buf = stbi_load_from_memory(encBuffer, len, &w, &h, &c, 0);
         if(buf == 0) {
             LOG_ERROR("Image could not be loaded from memory.");
             return false;
         }
-        loadFromMemory(buf, w, h, c, genMipmaps);
+        loadFromMemory(buf, w, h, c, genMipmaps, target);
         delete[] buf;
         return true;
     }
 
-    bool Texture::loadFromFile(const std::string& filename, bool genMipmaps) {
+    bool Texture::loadFromFile(const std::string& filename, bool genMipmaps, GLenum target) {
         int w, h, c;
         unsigned char* buf = stbi_load(filename.c_str(), &w, &h, &c, 0);
         if(buf == 0) {
             LOG_ERROR("Image file '%s' could not be loaded.\n", filename);
             return false;
         }
-        loadFromMemory(buf, w, h, c);
+        loadFromMemory(buf, w, h, c, genMipmaps, target);
         delete[] buf;
         return true;
     }

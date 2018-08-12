@@ -592,6 +592,21 @@ struct TextureWrapper : public kaun::Texture {
         }
     }
 
+    static int newCubeTexture(lua_State* L) {
+        TextureWrapper* texture = reinterpret_cast<TextureWrapper*>(new kaun::Texture(GL_TEXTURE_CUBE_MAP));
+        for(int i = 0; i < 6; ++i) {
+            const char* path = luaL_checkstring(L, i + 1);
+            auto fileData = getFileData(L, path);
+            if(fileData.first != nullptr) {
+                texture->loadEncodedFromMemory(fileData.first, fileData.second, false, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
+            } else {
+                return luaL_error(L, "Could not load file %s", path);
+            }
+        }
+        pushWithGC(L, texture);
+        return 1;
+    }
+
     static int newCheckerTexture(lua_State* L) {
         int args = lua_gettop(L);
         if(args == 3 || args == 9 || args == 11) {
@@ -744,7 +759,8 @@ int draw(lua_State* L) {
                             case kaun::UniformInfo::UniformType::MAT4:
                                 luaL_error(L, "Uniform matrices are not yet implemented yet.");
                                 return 0;
-                            case kaun::UniformInfo::UniformType::SAMPLER2D: {
+                            case kaun::UniformInfo::UniformType::SAMPLER2D: 
+                            case kaun::UniformInfo::UniformType::SAMPLERCUBE: {
                                 TextureWrapper* tex = lb::Userdata::get<TextureWrapper>(L, lua_gettop(L), false);
                                 uniforms.emplace_back(name, *reinterpret_cast<kaun::Texture*>(tex));
                                 break;
@@ -863,6 +879,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .endClass()
         .addCFunction("newTexture", TextureWrapper::newTexture)
         .addCFunction("newCheckerTexture", TextureWrapper::newCheckerTexture)
+        .addCFunction("newCubeTexture", TextureWrapper::newCubeTexture)
 
         .beginClass<RenderStateWrapper>("RenderState")
         .addFunction("getDepthWrite", &kaun::RenderState::getDepthWrite)
