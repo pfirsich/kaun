@@ -353,6 +353,22 @@ struct MeshWrapper : public kaun::Mesh {
         }
     }
 
+    static int newSphereMesh(lua_State* L) {
+        int nargs = lua_gettop(L);
+        float radius = luax_check<float>(L, 1);
+        int slices = luaL_checkint(L, 2);
+        int stacks = luaL_checkint(L, 3);
+        bool cubeProjectionTexCoords = false;
+        if(nargs >= 4) cubeProjectionTexCoords = luax_check<bool>(L, 4);
+        if(nargs >= 5) {
+            VertexFormatWrapper* format = lb::Userdata::get<VertexFormatWrapper>(L, 5, true);
+            pushWithGC(L, reinterpret_cast<MeshWrapper*>(kaun::Mesh::sphere(radius, slices, stacks, cubeProjectionTexCoords, *format)));
+        } else {
+            pushWithGC(L, reinterpret_cast<MeshWrapper*>(kaun::Mesh::sphere(radius, slices, stacks, cubeProjectionTexCoords, kaun::defaultVertexFormat)));
+        }
+        return 1;
+    }
+
     static int newPlaneMesh(lua_State* L) {
         int nargs = lua_gettop(L);
         float width = luax_check<float>(L, 1);
@@ -375,12 +391,17 @@ struct MeshWrapper : public kaun::Mesh {
 
 struct ShaderWrapper : public kaun::Shader {
     static int newShader(lua_State* L) {
-        size_t fragLen;
-        const char* fragStr = luaL_checklstring(L, 1, &fragLen);
-        size_t vertLen;
-        const char* vertStr = luaL_checklstring(L, 2, &vertLen);
         ShaderWrapper* shader = new ShaderWrapper();
-        shader->compileAndLinkStrings(fragStr, vertStr);
+        if(lua_gettop(L) > 1) {
+            const char* fragStr = luaL_checkstring(L, 1);
+            const char* vertStr = luaL_checkstring(L, 2);
+            shader->compileAndLinkStrings(fragStr, vertStr);
+        } else {
+            const char* shaderStr = luaL_checkstring(L, 1);
+            shader->compileString(shaderStr, kaun::Shader::Type::FRAGMENT)
+            && shader->compileString(shaderStr, kaun::Shader::Type::VERTEX)
+            && shader->link();
+        }
         pushWithGC(L, shader);
         return 1;
     }
@@ -863,6 +884,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("newMesh", MeshWrapper::newMesh)
         .addCFunction("newBoxMesh", MeshWrapper::newBoxMesh)
         .addCFunction("newPlaneMesh", MeshWrapper::newPlaneMesh)
+        .addCFunction("newSphereMesh", MeshWrapper::newSphereMesh)
 
         .beginClass<ShaderWrapper>("Shader")
         .endClass()
