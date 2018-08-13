@@ -147,21 +147,38 @@ namespace kaun {
     }
 
     void setRenderTarget(const std::vector<const RenderAttachment*>& colorAttachments,
-                         const RenderAttachment* depthStencil) {
-        if(colorAttachments.size() == 0 && depthStencil == nullptr) {
-            // bind backbuffer
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(viewport.x, viewport.y, viewport.z, viewport.w);
-        } else {
+                         const RenderAttachment* depthStencil, bool blitCurrent) {
+        flush();
+
+        // default is backbuffer
+        GLuint fbo = 0;
+        glm::ivec4 vp = viewport;
+
+        if(colorAttachments.size() > 0 || depthStencil != nullptr) {
             fboCacheEntry* entry = getFboCacheEntry(colorAttachments, depthStencil);
             if(!entry) {
                 entry = addFboCacheEntry(colorAttachments, depthStencil);
+                LOG_DEBUG("Created FBO %d\n", entry->fbo);
             }
             if(entry) {
-                glBindFramebuffer(GL_FRAMEBUFFER, entry->fbo);
-                glViewport(0, 0, entry->width, entry->height);
+                fbo = entry->fbo;
+                vp = glm::ivec4(0, 0, entry->width, entry->height);
+            } else {
+                return;
             }
         }
+
+        if(blitCurrent) {
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+            // current fbo (bound to GL_FRAMEBUFFER) is still bound to GL_READ_FRAMEBUFFER
+            glBlitFramebuffer(vp.x, vp.y, vp.z, vp.w,
+                              vp.x, vp.y, vp.z, vp.w,
+                              GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
+                              GL_NEAREST);
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glViewport(vp.x, vp.y, vp.z, vp.w);
     }
 
     void clear(const glm::vec4& color, int colorAttachmentIndex) {

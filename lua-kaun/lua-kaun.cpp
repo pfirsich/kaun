@@ -711,7 +711,8 @@ int setProjection(lua_State* L) {
                                              luax_check<float>(L, 3),
                                              luax_check<float>(L, 4)));
     } else if(args == 6) {
-        // ortho
+        kaun::setProjection(glm::ortho(luax_check<float>(L, 1), luax_check<float>(L, 2), luax_check<float>(L, 3),
+                                       luax_check<float>(L, 4), luax_check<float>(L, 5), luax_check<float>(L, 6)));
     } else if(args == 16) {
         float mat[16];
         for(int i = 0; i < 16; ++i) {
@@ -732,18 +733,31 @@ void setModelTransform(const TransformWrapper* trafo) {
     kaun::setModelTransform(*trafo);
 }
 
-const char* typeNames[9] = {
-    "nil", "boolean", "lightuserdata", "number", "string", "table", "function", "userdata", "thread"
-};
-
-void printStackInfo(lua_State* L) {
-    for(int i = 1; i <= lua_gettop(L); ++i) {
-        int type = lua_type(L, i);
-        std::printf("Arg %d: type = %s\n", i, lua_typename(L, type));
-        if(type == LUA_TSTRING) {
-            std::printf("String: %s\n", luaL_checklstring(L, i, nullptr));
+int setRenderTarget(lua_State* L) {
+    int nargs = lua_gettop(L);
+    std::vector<const kaun::RenderAttachment*> colorAttachments;
+    const kaun::RenderAttachment* depthStencil = nullptr;
+    bool blitCurrent = false;
+    if(nargs >= 1) {
+        if(lua_istable(L, 1)) {
+            int n = lua_objlen(L, 1);
+            for(int i = 1; i <= n; ++i) {
+                lua_rawgeti(L, 1, i);
+                colorAttachments.push_back(lb::Userdata::get<TextureWrapper>(L, lua_gettop(L), true));
+                lua_pop(L, 1);
+            }
+        } else {
+            colorAttachments.push_back(lb::Userdata::get<TextureWrapper>(L, 1, true));
         }
     }
+    if(nargs >= 2) {
+        depthStencil = lua_isnil(L, 2) ? nullptr : lb::Userdata::get<TextureWrapper>(L, 2, true);
+    }
+    if(nargs >= 3) {
+        blitCurrent = luax_check<bool>(L, 3);
+    }
+    kaun::setRenderTarget(colorAttachments, depthStencil, blitCurrent);
+    return 0;
 }
 
 int draw(lua_State* L) {
@@ -946,6 +960,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("setProjection", setProjection)
         .addFunction("setViewTransform", setViewTransform)
         .addFunction("setModelTransform", setModelTransform)
+        .addCFunction("setRenderTarget", setRenderTarget)
         .addCFunction("draw", draw)
         .addFunction("flush", flush)
 
