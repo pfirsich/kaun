@@ -78,8 +78,8 @@ namespace kaun {
 
         bool link();
 
-        UniformLocation getAttributeLocation(const std::string& name) const;
-        UniformLocation getUniformLocation(const std::string& name) const;
+        UniformLocation getAttributeLocation(const std::string& name, bool logNotFound = true) const;
+        UniformLocation getUniformLocation(const std::string& name, bool logNotFound = true) const;
 
         const UniformInfo& getUniformInfo(const std::string& name) const;
 

@@ -146,11 +146,11 @@ namespace kaun {
         }
     }
 
-    GLint Shader::getAttributeLocation(const std::string& name) const {
+    Shader::UniformLocation Shader::getAttributeLocation(const std::string& name, bool logNotFound) const {
         auto it = mAttributeLocations.find(name);
         if(it == mAttributeLocations.end()) {
             GLint loc = glGetAttribLocation(mProgramObject, name.c_str());
-            if(loc == -1) {
+            if(loc == -1 && logNotFound) {
                 LOG_WARNING("Attribute '%s' does not exist in shader program.", name.c_str());
             }
             mAttributeLocations[name] = loc;
@@ -160,11 +160,11 @@ namespace kaun {
         }
     }
 
-    GLint Shader::getUniformLocation(const std::string& name) const {
+    Shader::UniformLocation Shader::getUniformLocation(const std::string& name, bool logNotFound) const {
         auto it = mUniformLocations.find(name);
         if(it == mUniformLocations.end()) {
             GLint loc = glGetUniformLocation(mProgramObject, name.c_str());
-            if(loc == -1) {
+            if(loc == -1 && logNotFound) {
                 LOG_WARNING("Uniform '%s' does not exist in shader program.", name.c_str());
             }
             mUniformLocations[name] = loc;

@@ -16,26 +16,6 @@ namespace kaun {
     CloseSignalType closeSignal;
     ResizeSignalType resizeSignal;
 
-    void checkGLError() {
-        GLenum err = glGetError();
-        if(err != GL_NO_ERROR) {
-            std::string text("Unknown error");
-            switch(err) {
-                case GL_INVALID_ENUM:
-                    text = "GL_INVALID_ENUM"; break;
-                case GL_INVALID_VALUE:
-                    text = "GL_INVALID_VALUE"; break;
-                case GL_INVALID_OPERATION:
-                    text = "GL_INVALID_OPERATION"; break;
-                case GL_INVALID_FRAMEBUFFER_OPERATION:
-                    text = "GL_INVALID_FRAMEBUFFER_OPERATION"; break;
-                case GL_OUT_OF_MEMORY:
-                    text = "GL_OUT_OF_MEMORY"; break;
-            }
-            LOG_WARNING("GL Error!: 0x%X - %s\n", err, text.c_str());
-        }
-    }
-
     float getTime() {
         static std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
         std::chrono::duration<float> diff = std::chrono::high_resolution_clock::now() - start;
@@ -205,11 +185,6 @@ namespace kaun {
 
     void swapBuffers() {
         SDL_GL_SwapWindow(sdlWindow);
-        #ifndef NDEBUG
-            // We do this right after the buffer swap, because glGetError might
-            // trigger a flush, which will have happened when swapping buffers anyway.
-            checkGLError();
-        #endif
     }
 
     void updateAndSwap() {

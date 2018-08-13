@@ -295,7 +295,7 @@ namespace kaun {
             entry.shader->bind();
             Texture::markAllUnitsAvailable();
             for(auto& uniform : entry.uniforms) {
-                Shader::UniformLocation loc = entry.shader->getUniformLocation(uniform.getName());
+                Shader::UniformLocation loc = entry.shader->getUniformLocation(uniform.getName(), false);
                 if(loc != -1) uniform.set(loc);
             }
             entry.mesh->draw();
