@@ -33,10 +33,11 @@ namespace kaun {
 
     enum class SortType {
         DEFAULT, // sort by shader, textures, etc.
-        SUBMISSION, // sort by order of submission 
+        SUBMISSION, // sort by order of submission
     };
 
     extern void flush(SortType sortType = SortType::DEFAULT);
 
     extern void ensureGlState();
+    extern void checkGLError();
 }
