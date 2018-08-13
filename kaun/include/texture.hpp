@@ -12,7 +12,7 @@
 #include "log.hpp"
 
 namespace kaun {
-    class Texture {
+    class Texture : public RenderAttachment {
     public:
         enum class WrapMode : GLenum {
             CLAMP_TO_EDGE = GL_CLAMP_TO_EDGE,
@@ -37,11 +37,32 @@ namespace kaun {
             LINEAR = GL_LINEAR
         };
 
+        enum class Target : GLenum {
+            NONE = 0,
+            TEX_1D = GL_TEXTURE_1D,
+            TEX_2D = GL_TEXTURE_2D,
+            TEX_3D = GL_TEXTURE_3D,
+            TEX_1D_ARRAY = GL_TEXTURE_1D_ARRAY,
+            TEX_2D_ARRAY = GL_TEXTURE_2D_ARRAY,
+            TEX_RECTANGLE = GL_TEXTURE_RECTANGLE,
+            TEX_CUBE_MAP = GL_TEXTURE_CUBE_MAP,
+            TEX_BUFFER = GL_TEXTURE_BUFFER,
+            TEX_2D_MULTISAMPLE = GL_TEXTURE_2D_MULTISAMPLE,
+            TEX_2D_MULTISAMPLE_ARRAY = GL_TEXTURE_2D_MULTISAMPLE_ARRAY,
+            TEX_CUBE_MAP_POS_X = GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+            TEX_CUBE_MAP_NEG_X = GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+            TEX_CUBE_MAP_POS_Y = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+            TEX_CUBE_MAP_NEG_Y = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+            TEX_CUBE_MAP_POS_Z = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+            TEX_CUBE_MAP_NEG_Z = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,
+        };
+
     private:
-        GLenum mTarget;
+        Target mTarget;
         GLuint mTextureObject;
         PixelFormat mPixelFormat;
         int mWidth, mHeight;
+        size_t mSamples;
         bool mImmutable;
         WrapMode mSWrap, mTWrap;
         MinFilter mMinFilter;
@@ -50,7 +71,7 @@ namespace kaun {
         void setParameter(GLenum param, GLenum val) {
             if(mTextureObject != 0) {
                 bind(0);
-                glTexParameteri(mTarget, param, val);
+                glTexParameteri(static_cast<GLenum>(mTarget), param, val);
             }
         }
 
@@ -64,17 +85,23 @@ namespace kaun {
         static void ensureGlState();
 
         // Mipmapping is default, since it's takes a little more ram, but usually it's faster and looks nicer
-        Texture(GLenum target = GL_TEXTURE_2D) : mTarget(target), mTextureObject(0), mPixelFormat(PixelFormat::NONE),
-                mWidth(-1), mHeight(-1), mImmutable(false), mSWrap(WrapMode::CLAMP_TO_EDGE),
-                mTWrap(WrapMode::CLAMP_TO_EDGE), mMinFilter(MinFilter::LINEAR),
-                mMagFilter(MagFilter::LINEAR) {}
+        Texture(Target target = Target::TEX_2D)
+                : mTarget(target), mTextureObject(0), mPixelFormat(PixelFormat::NONE),
+                mWidth(-1), mHeight(-1), mSamples(0), mImmutable(false),
+                mSWrap(WrapMode::CLAMP_TO_EDGE), mTWrap(WrapMode::CLAMP_TO_EDGE),
+                mMinFilter(MinFilter::LINEAR), mMagFilter(MagFilter::LINEAR) {}
 
-        // Allocate (immutable!) texture storage wit glTexStorage2D
-        Texture(PixelFormat internalFormat, int width, int height, int levels = 1, GLenum target = GL_TEXTURE_2D) : Texture(target) {
-            setStorage(internalFormat, width, height, levels);
+        Texture(PixelFormat internalFormat, int width, int height, size_t samples, bool fixedSampleLocations = false)
+                : Texture(Target::TEX_2D_MULTISAMPLE) {
+            setStorageMultisample(internalFormat, width, height, samples, fixedSampleLocations);
         }
 
-        Texture(const std::string& filename, bool genMipmaps = true, GLenum target = GL_TEXTURE_2D) : Texture(target) {
+        // Allocate (immutable!) texture storage with glTexStorage2D
+        Texture(PixelFormat internalFormat, int width, int height, Target target = Target::TEX_2D) : Texture(target) {
+            setStorage(internalFormat, width, height);
+        }
+
+        Texture(const std::string& filename, bool genMipmaps = true, Target target = Target::TEX_2D) : Texture(target) {
             loadFromFile(filename, genMipmaps);
         }
 
@@ -82,20 +109,24 @@ namespace kaun {
             glDeleteTextures(1, &mTextureObject);
         }
 
-        void loadFromMemory(const uint8_t* buffer, int width, int height, int components, bool genMipmaps = true, GLenum target = 0, bool replace = false);
-        bool loadEncodedFromMemory(const uint8_t* encBuffer, int len, bool genMipmaps = true, GLenum target = 0);
-        bool loadFromFile(const std::string& filename, bool genMipmaps = true, GLenum target = 0);
+        void loadFromMemory(const uint8_t* buffer, int width, int height, int components, bool genMipmaps = true, Target target = Target::NONE, bool replace = false);
+        bool loadEncodedFromMemory(const uint8_t* encBuffer, int len, bool genMipmaps = true, Target target = Target::NONE);
+        bool loadFromFile(const std::string& filename, bool genMipmaps = true, Target target = Target::NONE);
+
         void setStorage(PixelFormat format, int width, int height, int levels = 1);
+        void setStorageMultisample(PixelFormat format, int width, int height, size_t samples, bool fixedSampleLocations = false);
+        
         void updateData(GLenum format, GLenum type, const void* data, int level = 0, int width = -1, int height = -1, int x = 0, int y = 0);
         // if you've set the base level + data, call this. this can also be called on an immutable texture
-        void updateMipmaps() {bind(0); glGenerateMipmap(mTarget);}
+        void updateMipmaps() {bind(0); glGenerateMipmap(static_cast<GLenum>(mTarget));}
 
-        void setTarget(GLenum target) { mTarget = target; }
-        GLenum getTarget() const { return mTarget; }
+        void setTarget(Target target) { mTarget = target; }
+        Target getTarget() const { return mTarget; }
         GLuint getTextureObject() const { return mTextureObject; }
         PixelFormat getPixelFormat() const { return mPixelFormat; }
         int getWidth() const { return mWidth; }
         int getHeight() const { return mHeight; }
+        size_t getSamples() const { return mSamples; }
         bool isValid() const { return mTextureObject != 0; }
 
         void attach(GLenum attachmentPoint) const;
@@ -118,13 +149,14 @@ namespace kaun {
 
         void setBorderColor(const glm::vec4& col) {
             bind(0);
-            glTexParameterfv(mTarget, GL_TEXTURE_BORDER_COLOR, glm::value_ptr(col));
+            glTexParameterfv(static_cast<GLenum>(mTarget),
+                             GL_TEXTURE_BORDER_COLOR, glm::value_ptr(col));
         }
 
         void bind(unsigned int unit) const {
             if(currentBoundTextures[unit] != this && mTextureObject != 0) {
                 glActiveTexture(GL_TEXTURE0 + unit);
-                glBindTexture(mTarget, mTextureObject);
+                glBindTexture(static_cast<GLenum>(mTarget), mTextureObject);
                 currentBoundTextures[unit] = this;
                 currentTextureUnitAvailable[unit] = false;
             }

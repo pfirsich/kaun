@@ -39,7 +39,7 @@ add_compile_definitions(NOMINMAX)
 set(KAUN_SOURCE kaun/log.cpp kaun/mesh.cpp kaun/mesh_buffers.cpp kaun/mesh_vertexaccessor.cpp
     kaun/mesh_vertexformat.cpp kaun/render.cpp kaun/renderstate.cpp kaun/shader.cpp
     kaun/shader_preambles.cpp kaun/texture.cpp kaun/transform.cpp kaun/utility.cpp
-    kaun/window.cpp kaun/kaun.cpp)
+    kaun/window.cpp kaun/kaun.cpp kaun/renderattachment.cpp)
 add_library(libkaun STATIC ${KAUN_SOURCE})
 target_link_libraries(libkaun SDL2main SDL2 glad)
 

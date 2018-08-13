@@ -79,11 +79,18 @@ namespace kaun {
         const RenderAttachment* depthStencil;
         GLuint fbo;
         int width, height;
+        size_t multisamples;
 
         fboCacheEntry(const std::vector<const RenderAttachment*>& colorAttachments,
-            const RenderAttachment* depthStencil, int width, int height) :
-            color(colorAttachments), depthStencil(depthStencil), fbo(0), width(width), height(height) {
+                const RenderAttachment* depthStencil, int width, int height) :
+                color(colorAttachments), depthStencil(depthStencil), fbo(0),
+                width(width), height(height), multisamples(0) {
             fbo = createFBO(colorAttachments, depthStencil);
+
+            for(auto attachment : colorAttachments)
+                multisamples = glm::max(multisamples, attachment->getSamples());
+            if(depthStencil)
+                multisamples = glm::max(multisamples, depthStencil->getSamples());
         }
     };
     std::vector<fboCacheEntry> fboCache;

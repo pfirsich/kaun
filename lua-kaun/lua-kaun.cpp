@@ -588,6 +588,26 @@ LuaEnum<kaun::Texture::MagFilter> magFilter("mag filter", {
     {"linear", kaun::Texture::MagFilter::LINEAR},
 });
 
+LuaEnum<kaun::PixelFormat> pixelFormat("pixel format", {
+    {"r", kaun::PixelFormat::R},
+    {"r16f", kaun::PixelFormat::R16F},
+    {"rg", kaun::PixelFormat::RG},
+    {"rg16f", kaun::PixelFormat::RG16F},
+    {"rgb", kaun::PixelFormat::RGB},
+    {"rgb16f", kaun::PixelFormat::RGB16F},
+    {"rgba", kaun::PixelFormat::RGBA},
+    {"rgba16f", kaun::PixelFormat::RGBA16F},
+    {"rgb10_a2", kaun::PixelFormat::RGB10_A2},
+    {"rg11f_b10f", kaun::PixelFormat::RG11F_B10F},
+    {"rgbe", kaun::PixelFormat::RGBE},
+    {"depth16", kaun::PixelFormat::DEPTH16},
+    {"depth24", kaun::PixelFormat::DEPTH24},
+    {"depth32f", kaun::PixelFormat::DEPTH32F},
+    {"depth32f_stencil8", kaun::PixelFormat::DEPTH32F_STENCIL8},
+    {"depth24_stencil8", kaun::PixelFormat::DEPTH24_STENCIL8},
+    {"stencil8", kaun::PixelFormat::STENCIL8},
+});
+
 struct TextureWrapper : public kaun::Texture {
     int getDimensions(lua_State* L) {
         lua_pushinteger(L, Texture::getWidth());
@@ -633,13 +653,31 @@ struct TextureWrapper : public kaun::Texture {
         }
     }
 
+    static int newRenderTexture(lua_State* L) {
+        int nargs = lua_gettop(L);
+        kaun::PixelFormat format = pixelFormat.check(L, 1);
+        int width = luaL_checkint(L, 2);
+        int height = luaL_checkint(L, 3);
+        if(nargs >= 4) {
+            int samples = luaL_checkint(L, 4);
+            bool fixedSampleLocations = false;
+            if(nargs >= 5) fixedSampleLocations = luax_check<bool>(L, 5);
+            pushWithGC(L, reinterpret_cast<TextureWrapper*>(new Texture(format, width, height, samples, fixedSampleLocations)));
+        } else {
+            pushWithGC(L, reinterpret_cast<TextureWrapper*>(new Texture(format, width, height)));
+        }
+        return 1;
+    }
+
     static int newCubeTexture(lua_State* L) {
-        TextureWrapper* texture = reinterpret_cast<TextureWrapper*>(new kaun::Texture(GL_TEXTURE_CUBE_MAP));
+        TextureWrapper* texture = reinterpret_cast<TextureWrapper*>(new kaun::Texture(kaun::Texture::Target::TEX_CUBE_MAP));
         for(int i = 0; i < 6; ++i) {
             const char* path = luaL_checkstring(L, i + 1);
             auto fileData = getFileData(L, path);
             if(fileData.first != nullptr) {
-                texture->loadEncodedFromMemory(fileData.first, fileData.second, false, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i);
+                // this line sucks
+                Texture::Target target = static_cast<Texture::Target>(static_cast<GLenum>(Texture::Target::TEX_CUBE_MAP_POS_X) + i);
+                texture->loadEncodedFromMemory(fileData.first, fileData.second, false, target);
             } else {
                 return luaL_error(L, "Could not load file %s", path);
             }
@@ -936,6 +974,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("newTexture", TextureWrapper::newTexture)
         .addCFunction("newCheckerTexture", TextureWrapper::newCheckerTexture)
         .addCFunction("newCubeTexture", TextureWrapper::newCubeTexture)
+        .addCFunction("newRenderTexture", TextureWrapper::newRenderTexture)
 
         .beginClass<RenderStateWrapper>("RenderState")
         .addFunction("getDepthWrite", &kaun::RenderState::getDepthWrite)

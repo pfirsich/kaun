@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 namespace kaun {
     enum class PixelFormat : GLenum {
@@ -31,6 +32,7 @@ namespace kaun {
         virtual PixelFormat getPixelFormat() const = 0;
         virtual int getWidth() const = 0;
         virtual int getHeight() const = 0;
+        virtual size_t getSamples() const = 0;
         glm::ivec2 getDimensions() const { return glm::ivec2(getWidth(), getHeight()); }
     };
 
@@ -39,9 +41,10 @@ namespace kaun {
         GLuint mRbo;
         PixelFormat mPixelFormat;
         int mWidth, mHeight;
+        size_t mSamples;
 
     public:
-        RenderBuffer(PixelFormat format, int width, int height);
+        RenderBuffer(PixelFormat format, int width, int height, size_t samples = 0);
         ~RenderBuffer() { if(mRbo != 0) glDeleteRenderbuffers(1, &mRbo); }
 
         void attach(GLenum attachmentPoint) const;
@@ -49,5 +52,6 @@ namespace kaun {
         PixelFormat getPixelFormat() const { return mPixelFormat; }
         int getWidth() const { return mWidth; }
         int getHeight() const { return mHeight; }
+        size_t getSamples() const { return mSamples; }
     };
 }
