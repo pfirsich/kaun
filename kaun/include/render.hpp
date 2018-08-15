@@ -22,10 +22,13 @@ namespace kaun {
     extern void setViewport(const glm::ivec4& viewport);
 
     extern void setProjection(const glm::mat4& matrix);
+    extern glm::mat4 getProjection();
     extern void setViewMatrix(const glm::mat4& viewTransform);
     extern void setViewTransform(const Transform& viewTransform);
+    extern glm::mat4 getViewMatrix();
     extern void setModelMatrix(const glm::mat4& modelTransform);
     extern void setModelTransform(const Transform& modelTransform);
+    extern glm::mat4 getModelMatrix();
 
     // This is a map of uniforms, because I want it to be similar to the Lua API
     // http://supercomputingblog.com/windows/ordered-map-vs-unordered-map-a-performance-study/

@@ -91,6 +91,14 @@ glm::vec4 luax_check<glm::vec4>(lua_State* L, int index) {
                      luax_check<float>(L, index + 2), luax_check<float>(L, index + 3));
 }
 
+template <>
+glm::mat4 luax_check<glm::mat4>(lua_State* L, int index) {
+    glm::mat4 mat;
+    for(int i = 0; i < 16; ++i) 
+        mat[i/4][i%4] = luax_check<float>(L, index + i);
+    return mat;
+}
+
 // checks if stack[index] is a table with num numbers and pushes them on to the stack
 // true on success, false if malformed
 bool luax_getnumtable(lua_State* L, int index, int num) {
@@ -129,15 +137,23 @@ T luax_checkvectable(lua_State* L, int index) {
     return T();
 }
 
-void luax_pushvec3(lua_State* L, const glm::vec3& v) {
+int luax_pushvec3(lua_State* L, const glm::vec3& v) {
     lua_pushnumber(L, v.x);
     lua_pushnumber(L, v.y);
     lua_pushnumber(L, v.z);
+    return 3;
 }
 
-void luax_pushvec4(lua_State* L, const glm::vec4& v) {
+int luax_pushvec4(lua_State* L, const glm::vec4& v) {
     lua_pushnumber(L, v.x);
     lua_pushnumber(L, v.y);
     lua_pushnumber(L, v.z);
     lua_pushnumber(L, v.w);
+    return 4;
+}
+
+int luax_pushmat4(lua_State* L, const glm::mat4& mat) {
+    for(int i = 0; i < 16; ++i) 
+        lua_pushnumber(L, mat[i/4][i%4]);
+    return 16;
 }

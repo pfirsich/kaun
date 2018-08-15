@@ -111,6 +111,10 @@ struct TransformWrapper : public kaun::Transform {
         return 0;
     }
 
+    int getMatrix(lua_State* L) {
+        return luax_pushmat4(L, Transform::getMatrix());
+    }
+
     static TransformWrapper newTransform() {
         return TransformWrapper();
     }
@@ -752,23 +756,41 @@ int setProjection(lua_State* L) {
         kaun::setProjection(glm::ortho(luax_check<float>(L, 1), luax_check<float>(L, 2), luax_check<float>(L, 3),
                                        luax_check<float>(L, 4), luax_check<float>(L, 5), luax_check<float>(L, 6)));
     } else if(args == 16) {
-        float mat[16];
-        for(int i = 0; i < 16; ++i) {
-            mat[i] = luax_check<float>(L, i);
-        }
-        kaun::setProjection(glm::make_mat4(mat));
+        kaun::setProjection(luax_check<glm::mat4>(L, 1));
     } else {
         luaL_error(L, "Number of arguments to kaun.setProjection must be 4, 6, or 16. Got %d", args);
     }
     return 0;
 }
 
+int getProjection(lua_State* L) {
+    return luax_pushmat4(L, kaun::getProjection());
+}
+
 void setViewTransform(const TransformWrapper* trafo) {
     kaun::setViewTransform(*trafo);
 }
 
+int setViewMatrix(lua_State* L) {
+    kaun::setViewMatrix(luax_check<glm::mat4>(L, 1));
+    return 0;
+}
+
+int getViewMatrix(lua_State* L) {
+    return luax_pushmat4(L, kaun::getViewMatrix());
+}
+
 void setModelTransform(const TransformWrapper* trafo) {
     kaun::setModelTransform(*trafo);
+}
+
+int setModelMatrix(lua_State* L) {
+    kaun::setModelMatrix(luax_check<glm::mat4>(L, 1));
+    return 0;
+}
+
+int getModelMatrix(lua_State* L) {
+    return luax_pushmat4(L, kaun::getModelMatrix());
 }
 
 int setRenderTarget(lua_State* L) {
@@ -935,6 +957,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("getForward", &TransformWrapper::getForward)
         .addCFunction("getUp", &TransformWrapper::getUp)
         .addCFunction("getRight", &TransformWrapper::getRight)
+        .addCFunction("getMatrix", &TransformWrapper::getMatrix)
         .endClass()
         .addFunction("newTransform", TransformWrapper::newTransform)
 
@@ -997,8 +1020,13 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("clearDepth", clearDepth)
         .addFunction("setViewport", (void(*)(int, int, int, int))&kaun::setViewport)
         .addCFunction("setProjection", setProjection)
+        .addCFunction("getProjection", getProjection)
         .addFunction("setViewTransform", setViewTransform)
+        .addCFunction("setViewMatrix", setViewMatrix)
+        .addCFunction("getViewMatrix", getViewMatrix)
         .addFunction("setModelTransform", setModelTransform)
+        .addCFunction("setModelMatrix", setModelMatrix)
+        .addCFunction("getModelMatrix", getModelMatrix)
         .addCFunction("setRenderTarget", setRenderTarget)
         .addCFunction("draw", draw)
         .addFunction("flush", flush)

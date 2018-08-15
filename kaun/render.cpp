@@ -243,6 +243,10 @@ namespace kaun {
         updateViewProjection();
     }
 
+    glm::mat4 getProjection() {
+        return projectionMatrix;
+    }
+
     void setViewMatrix(const glm::mat4& view) {
         viewMatrix = view;
         invViewMatrix = glm::inverse(viewMatrix);
@@ -255,6 +259,10 @@ namespace kaun {
         updateViewProjection();
     }
 
+    glm::mat4 getViewMatrix() {
+        return viewMatrix;
+    }
+
     void setModelMatrix(const glm::mat4& model) {
         modelMatrix = model;
         normalMatrix = glm::mat3(glm::transpose(glm::inverse(model)));
@@ -262,6 +270,10 @@ namespace kaun {
 
     void setModelTransform(const Transform& modelTransform) {
         setModelMatrix(modelTransform.getMatrix());
+    }
+
+    glm::mat4 getModelMatrix() {
+        return modelMatrix;
     }
 
     void draw(Mesh& mesh, Shader& shader, const std::vector<Uniform>& uniforms, const RenderState& state) {
