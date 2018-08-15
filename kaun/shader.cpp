@@ -53,14 +53,20 @@ namespace kaun {
 
         GLint compileStatus;
         glCompileShader(shader);
+
+        // get the log in any case
+        GLint logLength;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+        if(logLength > 0) {
+            std::unique_ptr<GLchar[]> shaderLog(new GLchar[logLength]);
+            glGetShaderInfoLog(shader, logLength, nullptr, shaderLog.get());
+            LOG_DEBUG("Shader compile log: %s", shaderLog.get());
+        }
+
         glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
         if(compileStatus == GL_FALSE){
             mStatus = Status::COMPILE_SHADER_FAILED;
-            GLint logLength;
-            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
-            std::unique_ptr<GLchar> shaderLog(new GLchar[logLength]);
-            glGetShaderInfoLog(shader, logLength, nullptr, shaderLog.get());
-            LOG_ERROR("shader compile failed: %s", shaderLog.get());
+            LOG_ERROR("Shader compile failed!");
             return false;
         } else {
             mStatus = Status::UNLINKED;
@@ -129,15 +135,19 @@ namespace kaun {
         }
         mShaderObjects.clear();
 
+        GLint logLength = 0;
+        glGetProgramiv(mProgramObject, GL_INFO_LOG_LENGTH, &logLength);
+        if(logLength > 0) {
+            std::unique_ptr<GLchar[]> programLog(new GLchar[logLength]);
+            glGetProgramInfoLog(mProgramObject, logLength, nullptr, programLog.get());
+            LOG_ERROR("Shader link log: %s", programLog.get());
+        }
+
         GLint linkStatus;
         glGetProgramiv(mProgramObject, GL_LINK_STATUS, &linkStatus);
         if(linkStatus == GL_FALSE) {
             mStatus = Status::LINK_FAILED;
-            GLint logLength = 0;
-            glGetProgramiv(mProgramObject, GL_INFO_LOG_LENGTH, &logLength);
-            std::unique_ptr<GLchar> programLog(new GLchar[logLength]);
-            glGetProgramInfoLog(mProgramObject, logLength, nullptr, programLog.get());
-            LOG_ERROR("Program link failed: %s", programLog.get());
+            LOG_ERROR("Program link failed!");
             return false;
         } else {
             mStatus = Status::LINKED;
