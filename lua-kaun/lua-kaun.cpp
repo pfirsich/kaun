@@ -880,10 +880,17 @@ int draw(lua_State* L) {
                                 break;
                             case kaun::UniformInfo::UniformType::MAT2:
                             case kaun::UniformInfo::UniformType::MAT3:
-                            case kaun::UniformInfo::UniformType::MAT4:
-                                luaL_error(L, "Uniform matrices are not yet implemented yet.");
+                                luaL_error(L, "Uniform mat2/mat3 are not yet implemented yet.");
                                 return 0;
-                            case kaun::UniformInfo::UniformType::SAMPLER2D: 
+                            case kaun::UniformInfo::UniformType::MAT4: {
+                                if(!lua_istable(L, -1)) return luaL_error(L, "For mat4 uniforms, please pass a table with 16 numbers.");
+                                luax_getnumtable(L, -1, 16);
+                                uniforms.emplace_back(name, luax_check<glm::mat4>(L, -16));
+                                lua_pop(L, 16);
+                                break;
+                            }
+                            case kaun::UniformInfo::UniformType::SAMPLER2D:
+                            case kaun::UniformInfo::UniformType::SAMPLER2DSHADOW:
                             case kaun::UniformInfo::UniformType::SAMPLERCUBE: {
                                 TextureWrapper* tex = lb::Userdata::get<TextureWrapper>(L, lua_gettop(L), false);
                                 uniforms.emplace_back(name, *reinterpret_cast<kaun::Texture*>(tex));
