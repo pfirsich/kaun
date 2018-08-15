@@ -143,7 +143,7 @@ namespace kaun {
         glTexImage2DMultisample(static_cast<GLenum>(mTarget), samples,
                                 static_cast<GLenum>(internalFormat),
                                 width, height, fixedSampleLocations);
-        initSampler();
+        //initSampler(); -- this just produces a bunch of errors with GL_TEXTURE_2D_MULTISAMPLE
     }
 
     void Texture::setStorage(PixelFormat internalFormat, int width, int height, int levels) {
