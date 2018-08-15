@@ -6,7 +6,7 @@
 
 namespace kaun {
     class Uniform {
-    private:
+    public:
         enum class Type {
             FLOAT, VEC2F, VEC3F, VEC4F,
             INT, VEC2I, VEC3I, VEC4I,
@@ -16,6 +16,7 @@ namespace kaun {
             TEXTURE
         };
 
+    private:
         std::string mName;
         Type mType;
         int mCount;
@@ -142,6 +143,10 @@ namespace kaun {
         const std::string& getName() const { return mName; }
         Type getType() const { return mType; }
         int getCount() const { return mCount; }
+        const Texture* getTexture() const {
+            assert(mType == Type::TEXTURE);
+            return std::get<const Texture*>(mData);
+        }
 
         void set(Shader::UniformLocation loc) const {
             int c = mCount;
@@ -188,8 +193,12 @@ namespace kaun {
                     glUniformMatrix3x4fv(loc, c, GL_FALSE, getData<float>()); break;
                 case Type::MAT4x3:
                     glUniformMatrix4x3fv(loc, c, GL_FALSE, getData<float>()); break;
-                case Type::TEXTURE:
-                    glUniform1i(loc, std::get<const Texture*>(mData)->bind()); break;
+                case Type::TEXTURE: {
+                    int unit = getTexture()->getUnit();
+                    assert(unit >= 0);
+                    glUniform1i(loc, unit);
+                    break;
+                }
             }
         }
     };

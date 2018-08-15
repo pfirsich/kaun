@@ -6,7 +6,6 @@
 
 namespace kaun {
     const Texture* Texture::currentBoundTextures[Texture::MAX_UNITS] = {nullptr};
-    bool Texture::currentTextureUnitAvailable[Texture::MAX_UNITS] = {true};
 
     void Texture::ensureGlState() {
         for(int unit = 0; unit < Texture::MAX_UNITS; ++unit) {
@@ -199,5 +198,29 @@ namespace kaun {
         }
         bind(0);
         glTexSubImage2D(static_cast<GLenum>(mTarget), level, x, y, width, height, format, type, data);
+    }
+
+    void Texture::bindTextures(const std::vector<const Texture*>& textures) {
+        assert(textures.size() <= MAX_UNITS);
+        bool unitInUse[MAX_UNITS] = {false};
+        std::vector<const Texture*> toBind;
+        for(auto tex : textures) {
+            int unit = tex->getUnit();
+            if(unit >= 0) { // already bound
+                unitInUse[unit] = true;
+            } else {
+                toBind.push_back(tex);
+            }
+        }
+        unsigned int unit;
+        for(auto tex : toBind) {
+            // get first available unit 
+            for(unit = 0; unit < MAX_UNITS; ++unit) {
+                if(!unitInUse[unit]) break;
+            }
+            assert(unit < MAX_UNITS);
+            tex->bind(unit);
+            unitInUse[unit] = true;
+        }
     }
 }

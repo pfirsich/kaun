@@ -316,6 +316,8 @@ namespace kaun {
     }
 
     void flush(SortType sortType) {
+        static std::vector<const Texture*> textures;
+
         switch(sortType) {
             case SortType::DEFAULT:
                 for(auto& entry : renderQueue) entry.sortKey = defaultSortKey(entry);
@@ -328,8 +330,15 @@ namespace kaun {
 
         for(auto& entry : renderQueue) {
             entry.renderState.apply();
+
+            textures.clear();
+            for(auto& uniform : entry.uniforms) {
+                if(uniform.getType() == Uniform::Type::TEXTURE)
+                    textures.push_back(uniform.getTexture());
+            }
+            Texture::bindTextures(textures);
+
             entry.shader->bind();
-            Texture::markAllUnitsAvailable();
             for(auto& uniform : entry.uniforms) {
                 Shader::UniformLocation loc = entry.shader->getUniformLocation(uniform.getName(), false);
                 if(loc != -1) uniform.set(loc);

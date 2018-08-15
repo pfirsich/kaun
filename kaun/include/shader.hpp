@@ -176,7 +176,8 @@ namespace kaun {
 
         void setUniform(UniformLocation loc, const Texture& tex) const {
             bind();
-            int unit = tex.bind();
+            int unit = tex.getUnit();
+            assert(unit >= 0);
             glUniform1i(loc, unit);
         }
 

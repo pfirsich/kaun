@@ -80,7 +80,6 @@ namespace kaun {
     public:
         static const size_t MAX_UNITS = 16;
         static const Texture* currentBoundTextures[MAX_UNITS];
-        static bool currentTextureUnitAvailable[MAX_UNITS];
 
         static void ensureGlState();
 
@@ -115,7 +114,7 @@ namespace kaun {
 
         void setStorage(PixelFormat format, int width, int height, int levels = 1);
         void setStorageMultisample(PixelFormat format, int width, int height, size_t samples, bool fixedSampleLocations = false);
-        
+
         void updateData(GLenum format, GLenum type, const void* data, int level = 0, int width = -1, int height = -1, int x = 0, int y = 0);
         // if you've set the base level + data, call this. this can also be called on an immutable texture
         void updateMipmaps() {bind(0); glGenerateMipmap(static_cast<GLenum>(mTarget));}
@@ -158,8 +157,14 @@ namespace kaun {
                 glActiveTexture(GL_TEXTURE0 + unit);
                 glBindTexture(static_cast<GLenum>(mTarget), mTextureObject);
                 currentBoundTextures[unit] = this;
-                currentTextureUnitAvailable[unit] = false;
             }
+        }
+
+        int getUnit() const {
+            for(int unit = 0; unit < MAX_UNITS; ++unit) {
+                if(currentBoundTextures[unit] == this) return unit;
+            }
+            return -1;
         }
 
         static void unbind(unsigned int unit) {
@@ -172,43 +177,7 @@ namespace kaun {
             }
         }
 
-        // These functions should be uses in conjunction.
-        // The parameterless bind binds the texture to ANY unit, or does not bind it if it is already bound and returns the index of the unit
-        // it was bound to.
-        // If there is no unit available (currentTextureUnitAvailable[unit] == false for all units) then this function will return -1
-        // To mark all texture units as unused for the next draw call, use markAllUnitsAvailable().
-        // bind(unit) "forcibly" binds the texture to the specified unit, even if it is marked as unavailable
-        // So if you have textures with a fixed unit you want to bind them to, then bind them first (because bind(unit) also makes sure to mark units as used)
-        // to accidental overwriting and bind the rest however you want
-        // This mechanism exists to minimize rebinds on textures if they are on different units and also to have multiple uniform blocks bind textures without talking to each other
-        // (obviously by introducing more global state)
-        // Example:
-        // for each draw call:
-        //     markAllUnitsAvailable()
-        //     fixedUnitTexture.bind(fixedUnit);
-        //     setUniform("fixedUnitTexture", fixedUnit);
-        //     setUniform("mySampler", someTexture.bind());
-        //     setUniform("mySampler2", someTexture2.bind());
-        //     draw()
-
-        int bind() const {
-            int firstAvailableUnit = -1;
-            for(unsigned int i = 0; i < MAX_UNITS; ++i) {
-                if(currentTextureUnitAvailable[i] == true && firstAvailableUnit < 0) firstAvailableUnit = i;
-                if(currentBoundTextures[i] == this) return i; // already bound, return index
-            }
-            if(firstAvailableUnit < 0) {
-                LOG_ERROR("No units available for binding!");
-            } else {
-                bind(firstAvailableUnit);
-            }
-            return firstAvailableUnit;
-        }
-
-        static void markAllUnitsAvailable() {
-            for(unsigned int i = 0; i < MAX_UNITS; ++i) currentTextureUnitAvailable[i] = true;
-        }
-
+        static void bindTextures(const std::vector<const Texture*>& textures);
 
         static Texture* pixel(const glm::vec4& col); // col in SRGB
         static Texture* checkerBoard(int width, int height, int checkerSize,
