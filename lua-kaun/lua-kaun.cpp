@@ -643,6 +643,15 @@ struct TextureWrapper : public kaun::Texture {
         return 0;
     }
 
+    void setBorderColor(float r, float g, float b, float a) {
+        Texture::setBorderColor(glm::vec4(r, g, b, a));
+    }
+
+    int setCompareFunc(lua_State* L) {
+        Texture::setCompareFunc(depthFunc.check(L, 2));
+        return 0;
+    }
+
     static int newTexture(lua_State* L) {
         const char* path = luaL_checklstring(L, 1, nullptr);
         auto fileData = getFileData(L, path);
@@ -993,6 +1002,8 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("setWrap", &TextureWrapper::setWrap)
         .addCFunction("getFilter", &TextureWrapper::getFilter)
         .addCFunction("setFilter", &TextureWrapper::setFilter)
+        .addFunction("setBorderColor", &TextureWrapper::setBorderColor)
+        .addCFunction("setCompareFunc", &TextureWrapper::setCompareFunc)
         .endClass()
         .addCFunction("newTexture", TextureWrapper::newTexture)
         .addCFunction("newCheckerTexture", TextureWrapper::newCheckerTexture)
