@@ -87,6 +87,14 @@ struct TransformWrapper : public kaun::Transform {
         return 3;
     }
 
+    void setScale(float x, float y, float z) {
+        Transform::setScale(glm::vec3(x, y, z));
+    }
+
+    int getScale(lua_State* L) {
+        return luax_pushvec3(L, Transform::getScale());
+    }
+
     int lookAt(lua_State* L) {
         int nargs = lua_gettop(L);
         if(nargs == 4) {
@@ -988,6 +996,8 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("getUp", &TransformWrapper::getUp)
         .addCFunction("getRight", &TransformWrapper::getRight)
         .addCFunction("getMatrix", &TransformWrapper::getMatrix)
+        .addFunction("setScale", &TransformWrapper::setScale)
+        .addCFunction("getScale", &TransformWrapper::getScale)
         .endClass()
         .addFunction("newTransform", TransformWrapper::newTransform)
 
