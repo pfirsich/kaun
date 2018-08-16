@@ -123,6 +123,24 @@ struct TransformWrapper : public kaun::Transform {
         return luax_pushmat4(L, Transform::getMatrix());
     }
 
+    int setMatrix(lua_State* L) {
+        Transform::setMatrix(luax_check<glm::mat4>(L, 1));
+        return 0;
+    }
+
+    void setQuaternion(float w, float x, float y, float z) {
+        Transform::setQuaternion(glm::quat(w, x, y, z));
+    }
+
+    int getQuaternion(lua_State* L) {
+        const glm::quat q = Transform::getQuaternion();
+        lua_pushnumber(L, q.w);
+        lua_pushnumber(L, q.x);
+        lua_pushnumber(L, q.y);
+        lua_pushnumber(L, q.z);
+        return 4;
+    }
+
     static TransformWrapper newTransform() {
         return TransformWrapper();
     }
@@ -996,6 +1014,9 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("getUp", &TransformWrapper::getUp)
         .addCFunction("getRight", &TransformWrapper::getRight)
         .addCFunction("getMatrix", &TransformWrapper::getMatrix)
+        .addCFunction("setMatrix", &TransformWrapper::setMatrix)
+        .addFunction("setQuaternion", &TransformWrapper::setQuaternion)
+        .addCFunction("getQuaternion", &TransformWrapper::getQuaternion)
         .addFunction("setScale", &TransformWrapper::setScale)
         .addCFunction("getScale", &TransformWrapper::getScale)
         .endClass()
