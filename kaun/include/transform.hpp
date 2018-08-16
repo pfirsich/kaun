@@ -20,7 +20,7 @@ namespace kaun {
 
     public:
         Transform() : mPosition(0.0f, 0.0f, 0.0f), mScale(1.0f, 1.0f, 1.0f),
-            mQuaternion(), mMatrix(1.0f), mMatrixDirty(true) {}
+            mQuaternion(1.0f, 0.0f, 0.0f, 0.0f), mMatrix(1.0f), mMatrixDirty(true) { }
         Transform(const glm::vec3& pos);
         Transform(const glm::vec3& pos, const glm::quat& quat);
         Transform(const glm::vec3& pos, const glm::quat& quat, const glm::vec3& scale);
