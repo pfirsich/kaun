@@ -306,6 +306,20 @@ struct MeshWrapper : public kaun::Mesh {
         return setVerticesInternal(L, 1);
     }
 
+    static int newObjMesh(lua_State* L) {
+        const char* path = luaL_checklstring(L, 1, nullptr);
+        VertexFormatWrapper* format = reinterpret_cast<VertexFormatWrapper*>(&kaun::defaultVertexFormat);
+        if(lua_gettop(L) >= 2) format = lb::Userdata::get<VertexFormatWrapper>(L, 2, true);
+        auto fileData = getFileData(L, path);
+        if(fileData.first != nullptr) {
+            pushWithGC(L, reinterpret_cast<MeshWrapper*>(Mesh::objFile(fileData.first, fileData.second, *format)));
+            return 1;
+        } else {
+            luaL_error(L, "Could not load file %s", path);
+            return 0;
+        }
+    }
+
     static int newMesh(lua_State* L) {
         // mode, vertexFormat
         // mode, vertexFormat, vertices, (usage)
@@ -996,6 +1010,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("newBoxMesh", MeshWrapper::newBoxMesh)
         .addCFunction("newPlaneMesh", MeshWrapper::newPlaneMesh)
         .addCFunction("newSphereMesh", MeshWrapper::newSphereMesh)
+        .addCFunction("newObjMesh", MeshWrapper::newObjMesh)
 
         .beginClass<ShaderWrapper>("Shader")
         .endClass()

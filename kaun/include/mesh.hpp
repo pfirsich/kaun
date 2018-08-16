@@ -126,6 +126,7 @@ namespace kaun {
         static Mesh* plane(float width, float height, int segmentsX, int segmentsY, const VertexFormat& format);
 
         static Mesh* objFile(const std::string& filename, const VertexFormat& format);
+        static Mesh* objFile(const uint8_t* buffer, size_t size, const VertexFormat& format);
 
         ///////////////////////////////////////////////////////////////////////////
         /*

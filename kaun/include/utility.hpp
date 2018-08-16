@@ -19,6 +19,25 @@ namespace kaun {
         }
     };
 
+    // http://tuttlem.github.io/2014/08/18/getting-istream-to-work-off-a-byte-array.html
+    class membuf : public std::basic_streambuf<char> {
+    public:
+        membuf(const uint8_t *data, size_t size) {
+            char* p = (char*)data; // :/
+            setg(p, p, p + size);
+        }
+    };
+
+    class memstream : public std::istream {
+    private:
+        membuf mBuffer;
+
+    public:
+        memstream(const uint8_t *data, size_t size) : std::istream(&mBuffer), mBuffer(data, size) {
+            rdbuf(&mBuffer);
+        }
+    };
+
     // http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
     tl::expected<std::string, ErrorTuple> readFile(const std::string& filename);
 

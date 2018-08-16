@@ -6,6 +6,7 @@
 #include <tiny_obj_loader.h>
 
 #include "mesh.hpp"
+#include "utility.hpp"
 
 namespace kaun {
     GLuint Mesh::currentVAO = 0;
@@ -362,22 +363,9 @@ namespace kaun {
         glm::vec2 texCoord;
     };
 
-    Mesh* Mesh::objFile(const std::string& filename, const VertexFormat& format) {
-        tinyobj::attrib_t attrib;
-        std::vector<tinyobj::shape_t> shapes;
-        std::vector<tinyobj::material_t> materials;
-
-        std::string err;
-        bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err,
-            filename.c_str(), nullptr, true);
-
-        if (ret) {
-            LOG_WARNING("Loading object file: %s", err.c_str());
-        } else {
-            LOG_ERROR("Error loading object file: %s", err.c_str());
-            return nullptr;
-        }
-
+    Mesh* loadTinyObj(const tinyobj::attrib_t& attrib, const std::vector<tinyobj::shape_t>& shapes,
+                      const std::vector<tinyobj::material_t>& materials,
+                      const VertexFormat& format) {
         // Per-Face Materials are annoying and I am going to ignore them completely.
         // If I wanted to respect them, I would have to bucket the faces by material, then
         // build vertex/index buffers from them. This is annoying and slow.
@@ -440,8 +428,47 @@ namespace kaun {
             }
         }
 
-        LOG_INFO("Loaded mesh '%s' (%d vertices, %d faces)", filename.c_str(), vertices.size(), vertices.size()/3);
+        LOG_DEBUG("Loaded mesh (%d vertices, %d faces)", vertices.size(), vertices.size()/3);
 
         return mesh;
+    }
+
+    Mesh* Mesh::objFile(const uint8_t* buffer, size_t size, const VertexFormat& format) {
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+
+        std::string err;
+        memstream stream(buffer, size);
+        bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, &stream, nullptr, true);
+
+        if(ret) {
+            if(err.length() > 0) LOG_WARNING("Warning loading object file: %s", err.c_str());
+        } else {
+            LOG_ERROR("Error loading object file: %s", err.c_str());
+            return nullptr;
+        }
+
+        return loadTinyObj(attrib, shapes, materials, format);
+    }
+
+    Mesh* Mesh::objFile(const std::string& filename, const VertexFormat& format) {
+        tinyobj::attrib_t attrib;
+        std::vector<tinyobj::shape_t> shapes;
+        std::vector<tinyobj::material_t> materials;
+
+        std::string err;
+        bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &err,
+            filename.c_str(), nullptr, true);
+
+        if(ret) {
+            if(err.length() > 0) LOG_WARNING("Warning loading object file: %s", err.c_str());
+            LOG_WARNING("Warning loading object file '%s': %s", filename.c_str(), err.c_str());
+        } else {
+            LOG_ERROR("Error loading object file '%s': %s", filename.c_str(), err.c_str());
+            return nullptr;
+        }
+
+        return loadTinyObj(attrib, shapes, materials, format);
     }
 }

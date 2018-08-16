@@ -119,16 +119,18 @@ namespace kaun {
         // if you've set the base level + data, call this. this can also be called on an immutable texture
         void updateMipmaps() {bind(0); glGenerateMipmap(static_cast<GLenum>(mTarget));}
 
+        bool isValid() const { return mTextureObject != 0; }
+
+        void attach(GLenum attachmentPoint) const;
+
         void setTarget(Target target) { mTarget = target; }
         Target getTarget() const { return mTarget; }
+
         GLuint getTextureObject() const { return mTextureObject; }
         PixelFormat getPixelFormat() const { return mPixelFormat; }
         int getWidth() const { return mWidth; }
         int getHeight() const { return mHeight; }
         size_t getSamples() const { return mSamples; }
-        bool isValid() const { return mTextureObject != 0; }
-
-        void attach(GLenum attachmentPoint) const;
 
         void setWrap(WrapMode u, WrapMode v) {
             setParameter(GL_TEXTURE_WRAP_S, static_cast<GLenum>(mSWrap = u));
