@@ -2,6 +2,9 @@
 
 #include "shader.hpp"
 
+// Gamma Correction Helpers are from https://bitbucket.org/rude/love (wrap_Graphics.lua)
+// and  http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
+
 std::string kaun::Shader::globalShaderPreamble = R"(#version 330 core
 
 // Attribute Indices
@@ -39,7 +42,41 @@ uniform mat3 kaun_normal;
 uniform mat4 kaun_modelView;
 uniform mat4 kaun_modelViewProjection;
 
-//TODO: Gamma correction functions?
+// Gamma Correction Helpers
+float gammaToLinearPrecise(float c) {
+	return c <= 0.04045 ? c * 0.077399380804954 : pow((c + 0.055) * 0.9478672985782, 2.4);
+}
+vec3 gammaToLinearPrecise(vec3 c) {
+	bvec3 leq = lessThanEqual(c, vec3(0.04045));
+	c.r = leq.r ? c.r * 0.077399380804954 : pow((c.r + 0.055) * 0.9478672985782, 2.4);
+	c.g = leq.g ? c.g * 0.077399380804954 : pow((c.g + 0.055) * 0.9478672985782, 2.4);
+	c.b = leq.b ? c.b * 0.077399380804954 : pow((c.b + 0.055) * 0.9478672985782, 2.4);
+	return c;
+}
+vec4 gammaToLinearPrecise(vec4 c) { return vec4(gammaToLinearPrecise(c.rgb), c.a); }
+
+float linearToGammaPrecise(float c) {
+	return c < 0.0031308 ? c * 12.92 : 1.055 * pow(c, 1.0 / 2.4) - 0.055;
+}
+vec3 linearToGammaPrecise(vec3 c) {
+	bvec3 lt = lessThanEqual(c, vec3(0.0031308));
+	c.r = lt.r ? c.r * 12.92 : 1.055 * pow(c.r, 1.0 / 2.4) - 0.055;
+	c.g = lt.g ? c.g * 12.92 : 1.055 * pow(c.g, 1.0 / 2.4) - 0.055;
+	c.b = lt.b ? c.b * 12.92 : 1.055 * pow(c.b, 1.0 / 2.4) - 0.055;
+	return c;
+}
+vec4 linearToGammaPrecise(vec4 c) { return vec4(linearToGammaPrecise(c.rgb), c.a); }
+
+mediump float gammaToLinearFast(mediump float c) { return c * (c * (c * 0.305306011 + 0.682171111) + 0.012522878); }
+mediump vec3 gammaToLinearFast(mediump vec3 c) { return c * (c * (c * 0.305306011 + 0.682171111) + 0.012522878); }
+mediump vec4 gammaToLinearFast(mediump vec4 c) { return vec4(gammaToLinearFast(c.rgb), c.a); }
+
+mediump float linearToGammaFast(mediump float c) { return max(1.055 * pow(max(c, 0.0), 0.41666666) - 0.055, 0.0); }
+mediump vec3 linearToGammaFast(mediump vec3 c) { return max(1.055 * pow(max(c, vec3(0.0)), vec3(0.41666666)) - 0.055, vec3(0.0)); }
+mediump vec4 linearToGammaFast(mediump vec4 c) { return vec4(linearToGammaFast(c.rgb), c.a); }
+
+#define gammaToLinear gammaToLinearFast
+#define linearToGamma linearToGammaFast
 )";
 
 std::string kaun::Shader::fragmentShaderPreamble = R"(
