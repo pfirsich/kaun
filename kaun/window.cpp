@@ -22,39 +22,6 @@ namespace kaun {
         return diff.count();
     }
 
-    std::unordered_map<GLenum, const char*> debugSourceName = {
-        {GL_DEBUG_SOURCE_API, "api"},
-        {GL_DEBUG_SOURCE_SHADER_COMPILER, "shader_compiler"},
-        {GL_DEBUG_SOURCE_WINDOW_SYSTEM, "window_system"},
-        {GL_DEBUG_SOURCE_THIRD_PARTY, "third_party"},
-        {GL_DEBUG_SOURCE_APPLICATION, "application"},
-        {GL_DEBUG_SOURCE_OTHER, "other"}
-    };
-
-    std::unordered_map<GLenum, const char*> debugTypeName = {
-        {GL_DEBUG_TYPE_ERROR,"error"},
-        {GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR,"deprecated_behavior"},
-        {GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR,"undefined_behavior"},
-        {GL_DEBUG_TYPE_PERFORMANCE,"performance"},
-        {GL_DEBUG_TYPE_PORTABILITY,"portability"},
-        {GL_DEBUG_TYPE_OTHER,"other"},
-        {GL_DEBUG_TYPE_MARKER,"marker"},
-        {GL_DEBUG_TYPE_PUSH_GROUP,"push_group"},
-        {GL_DEBUG_TYPE_POP_GROUP,"pop_group"}
-    };
-
-    std::unordered_map<GLenum, const char*> debugSeverityName = {
-        {GL_DEBUG_SEVERITY_HIGH, "high"},
-        {GL_DEBUG_SEVERITY_MEDIUM, "medium"},
-        {GL_DEBUG_SEVERITY_LOW, "low"},
-        {GL_DEBUG_SEVERITY_NOTIFICATION, "notification"}
-    };
-
-    void __stdcall debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
-        if(severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
-        LOG_DEBUG("GL Debug message - source: %s, type: %s, severity: %s, message: %s", debugSourceName[source], debugTypeName[type], debugSeverityName[severity], message);
-    }
-
     void sdlLogFunction(void* userdata, int category, SDL_LogPriority priority, const char* message) {
         LOG_DEBUG("SDL log: %s", message);
     }
@@ -125,28 +92,6 @@ namespace kaun {
                 LOG_ERROR("SDL_GL_SetSwapInterval failed! - '%s'\n", SDL_GetError());
             }
         }
-
-        if(props.srgb) {
-            glEnable(GL_FRAMEBUFFER_SRGB);
-        }
-
-        if(props.msaaSamples > 0) {
-            glEnable(GL_MULTISAMPLE);
-        }
-
-        #ifndef NDEBUG
-            if(GLAD_GL_KHR_debug) {
-                LOG_DEBUG("KHR_debug supported. Turning on debug output.");
-                glDebugMessageCallback(debugCallback, nullptr);
-                glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
-                glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, true);
-            } else if (GLAD_GL_ARB_debug_output) {
-                LOG_DEBUG("ARB_debug_output supported. Turning on debug output.");
-                glDebugMessageCallbackARB(debugCallback, nullptr);
-                glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-                glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, true);
-            }
-        #endif
 
         return true;
     }

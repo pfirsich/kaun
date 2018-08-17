@@ -7,11 +7,10 @@ void resize(int w, int h) {
 }
 
 int main(int argc, char** argv) {
-    kaun::init();
-
     kaun::WindowProperties props;
     props.msaaSamples = 8;
     kaun::setupWindow("Kaun Test", 1600, 900, props);
+    kaun::init();
 
     kaun::resizeSignal.connect(resize);
     kaun::resizeSignal.emit(kaun::getWindowWidth(), kaun::getWindowHeight());
