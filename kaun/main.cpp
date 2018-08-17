@@ -9,6 +9,7 @@ void resize(int w, int h) {
 int main(int argc, char** argv) {
     kaun::WindowProperties props;
     props.msaaSamples = 8;
+    props.srgb = true;
     kaun::setupWindow("Kaun Test", 1600, 900, props);
     kaun::init();
 
@@ -20,13 +21,19 @@ int main(int argc, char** argv) {
 
     kaun::Shader shader("media/shaders/default.frag", "media/shaders/default.vert");
 
-    //kaun::Mesh* mesh = kaun::Mesh::box(1.0f, 1.0f, 1.0f, kaun::defaultVertexFormat);
-    //kaun::Mesh* mesh = kaun::Mesh::sphere(1.0f, 32, 12, false, kaun::defaultVertexFormat);
-    kaun::Mesh* mesh = kaun::Mesh::objFile("media/bunny.obj", kaun::defaultVertexFormat);
-    mesh->normalize(true);
-    kaun::Transform meshTrafo;
+    kaun::Mesh* planeMesh = kaun::Mesh::plane(2.0f, 2.0f, 1, 1, kaun::defaultVertexFormat);
+    kaun::Transform planeTrafo;
+    planeTrafo.rotateWorld(-glm::half_pi<float>()*0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
 
-    kaun::Texture tex = kaun::Texture("media/default.png");
+    //kaun::Mesh* mesh = kaun::Mesh::box(1.0f, 1.0f, 1.0f, kaun::defaultVertexFormat);
+    kaun::Mesh* mesh = kaun::Mesh::plane(1.0f, 1.0f, 1, 1, kaun::defaultVertexFormat);
+    //kaun::Mesh* mesh = kaun::Mesh::sphere(1.0f, 32, 12, false, kaun::defaultVertexFormat);
+    //kaun::Mesh* mesh = kaun::Mesh::objFile("media/bunny.obj", kaun::defaultVertexFormat);
+    //mesh->normalize(true);
+    kaun::Transform meshTrafo;
+    meshTrafo.rotateWorld(-glm::half_pi<float>(), glm::vec3(1.0f, 0.0f, 0.0f));
+
+    //kaun::Texture tex = kaun::Texture("media/default.png");
     //kaun::Texture* tex = kaun::Texture::checkerBoard(16, 16, 2);
     //kaun::Texture* tex = kaun::Texture::pixel(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
 
@@ -34,23 +41,35 @@ int main(int argc, char** argv) {
 
     kaun::setViewTransform(cameraTransform);
 
+    auto* colorTarget = new kaun::Texture(kaun::PixelFormat::SRGB8A8, 1600, 900);
+    auto* depthTarget = new kaun::Texture(kaun::PixelFormat::DEPTH24, 1600, 900);
+
     bool quit = false;
     kaun::closeSignal.connect([&quit]() {quit = true;});
     float lastTime = kaun::getTime();
     while(!quit) {
-        kaun::clear(glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-        kaun::clearDepth();
-
+        // update
         float t = kaun::getTime();
         float dt = t - lastTime;
         lastTime = t;
 
-        meshTrafo.rotate(dt, glm::vec3(0.0f, 1.0f, 0.0f));
+        //meshTrafo.rotateWorld(dt, glm::vec3(0.0f, 1.0f, 0.0f));
+
+        // draw
+        kaun::setRenderTarget({colorTarget}, depthTarget);
+        kaun::clear(glm::vec4(0.9f, 1.0f, 1.0f, 1.0f));
+        kaun::clearDepth();
 
         kaun::setModelTransform(meshTrafo);
-
         kaun::draw(*mesh, shader, {
-            kaun::Uniform("base", tex)
+            kaun::Uniform("color", glm::vec3(1.0f, 0.0f, 0.0f))
+        });
+
+        kaun::setRenderTarget({}, nullptr, true);
+
+        kaun::setModelTransform(planeTrafo);
+        kaun::draw(*planeMesh, shader, {
+            kaun::Uniform("color", glm::vec3(0.0f, 1.0f, 0.0f))
         });
 
         kaun::flush();

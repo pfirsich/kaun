@@ -49,7 +49,7 @@ namespace kaun {
         // This should do nothing for non-srgb render targets, so I think it's fine
         // to unconditionally enable this with no control about it otherwise.
         // Disable this for now, because of: https://devtalk.nvidia.com/default/board/69/opengl/
-        //glEnable(GL_FRAMEBUFFER_SRGB);
+        glEnable(GL_FRAMEBUFFER_SRGB);
 
         // This should not do anything for non-multisamples rendertargets, so the same applies here
         // It might be useful though to render geometry without msaa to msaa render targets, but

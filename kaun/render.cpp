@@ -180,8 +180,21 @@ namespace kaun {
             // current fbo (bound to GL_FRAMEBUFFER) is still bound to GL_READ_FRAMEBUFFER
             glBlitFramebuffer(vp.x, vp.y, vp.z, vp.w,
                               vp.x, vp.y, vp.z, vp.w,
-                              GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
+                              GL_COLOR_BUFFER_BIT/* | GL_DEPTH_BUFFER_BIT*/,
                               GL_NEAREST);
+            #ifdef DISABLE_SRGB_BEFORE_DEPTH_BLIT
+                glDisable(GL_FRAMEBUFFER_SRGB);
+                glBlitFramebuffer(vp.x, vp.y, vp.z, vp.w,
+                                    vp.x, vp.y, vp.z, vp.w,
+                                    GL_DEPTH_BUFFER_BIT,
+                                    GL_NEAREST);
+                glEnable(GL_FRAMEBUFFER_SRGB);
+            #else
+                glBlitFramebuffer(vp.x, vp.y, vp.z, vp.w,
+                        vp.x, vp.y, vp.z, vp.w,
+                        GL_DEPTH_BUFFER_BIT,
+                        GL_NEAREST);
+            #endif
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
