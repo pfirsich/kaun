@@ -6,187 +6,11 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include "render.hpp"
+#include "rendertarget.hpp"
 
 namespace kaun {
     glm::ivec4 viewport;
-
-    GLenum colorAttachmentPoints[8] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
-        GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5,
-        GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7};
-
-    std::unordered_map<GLenum, std::string> framebufferStatus = {
-        {GL_FRAMEBUFFER_UNDEFINED, "undefined"},
-        {GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT, "incomplete_attachment"},
-        {GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT, "incomplete_missing_attachment"},
-        {GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER, "incomplete_draw_buffer"},
-        {GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER, "incomplete_read_buffer"},
-        {GL_FRAMEBUFFER_UNSUPPORTED, "unsupported"},
-        {GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE, "incomplete_multisample"},
-        {GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE, "incomplete_multisample"},
-        {GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS, "incomplete_layer_targets"}
-    };
-
-    GLenum getDepthStencilAttachmentPoint(const RenderAttachment* attachment) {
-        switch(attachment->getPixelFormat()) {
-            case PixelFormat::DEPTH16:
-            case PixelFormat::DEPTH24:
-            case PixelFormat::DEPTH32F:
-                return GL_DEPTH_ATTACHMENT;
-            case PixelFormat::DEPTH24_STENCIL8:
-            case PixelFormat::DEPTH32F_STENCIL8:
-                return GL_DEPTH_STENCIL_ATTACHMENT;
-            case PixelFormat::STENCIL8:
-                return GL_STENCIL_ATTACHMENT;
-            default:
-                return 0;
-        }
-    }
-
-    GLuint createFBO(const std::vector<const RenderAttachment*>& colorAttachments,
-                     const RenderAttachment* depthStencil) {
-        GLuint fbo;
-        glGenFramebuffers(1, &fbo);
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        for(size_t i = 0; i < colorAttachments.size(); ++i) {
-            colorAttachments[i]->attach(GL_COLOR_ATTACHMENT0 + i);
-        }
-        if(depthStencil) {
-            GLenum attachmentPoint = getDepthStencilAttachmentPoint(depthStencil);
-            assert(attachmentPoint > 0);
-            depthStencil->attach(attachmentPoint);
-        }
-
-        if(colorAttachments.size() == 0) { // depth/stencil only
-            glReadBuffer(GL_NONE);
-            glDrawBuffer(GL_NONE);
-        } else {
-            glDrawBuffers(colorAttachments.size(), colorAttachmentPoints);
-        }
-
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if(status != GL_FRAMEBUFFER_COMPLETE) {
-            LOG_ERROR("Framebuffer object %d is incomplete after initialization!: %s", fbo,
-                framebufferStatus[status].c_str());
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        return fbo;
-    }
-
-    struct fboCacheEntry {
-        std::vector<const RenderAttachment*> color;
-        const RenderAttachment* depthStencil;
-        GLuint fbo;
-        int width, height;
-        size_t multisamples;
-
-        fboCacheEntry(const std::vector<const RenderAttachment*>& colorAttachments,
-                const RenderAttachment* depthStencil, int width, int height) :
-                color(colorAttachments), depthStencil(depthStencil), fbo(0),
-                width(width), height(height), multisamples(0) {
-            fbo = createFBO(colorAttachments, depthStencil);
-
-            for(auto attachment : colorAttachments)
-                multisamples = glm::max(multisamples, attachment->getSamples());
-            if(depthStencil)
-                multisamples = glm::max(multisamples, depthStencil->getSamples());
-        }
-    };
-    std::vector<fboCacheEntry> fboCache;
-
-    fboCacheEntry* getFboCacheEntry(const std::vector<const RenderAttachment*>& colorAttachments,
-                                    const RenderAttachment* depthStencil) {
-        for(auto& entry : fboCache) {
-            if(entry.depthStencil != depthStencil) continue;
-            if(entry.color.size() == colorAttachments.size()) {
-                bool match = true;
-                for(size_t i = 0; i < colorAttachments.size(); ++i) {
-                    if(entry.color[i] != colorAttachments[i]) {
-                        match = false;
-                        break;
-                    }
-                }
-                if(match) return &entry;
-            }
-        }
-        return nullptr;
-    }
-
-    fboCacheEntry* addFboCacheEntry(const std::vector<const RenderAttachment*>& colorAttachments,
-                                    const RenderAttachment* depthStencil) {
-        // make sure all attachments are the same size and determine joint size
-        int width, height;
-        if(colorAttachments.size() > 0) {
-            width = colorAttachments[0]->getWidth();
-            height = colorAttachments[0]->getHeight();
-
-            bool mismatch = false;
-            for(auto attachment : colorAttachments) {
-                if(width != attachment->getWidth() || height != attachment->getHeight()) {
-                    mismatch = true;
-                    break;
-                }
-            }
-
-            if(depthStencil) {
-                if(width != depthStencil->getWidth() || height != depthStencil->getHeight()) {
-                    mismatch = true;
-                }
-                GLenum attachmentPoint = getDepthStencilAttachmentPoint(depthStencil);
-                if(attachmentPoint == 0) {
-                    LOG_ERROR("Invalid pixel format for depth/stencil attachment!");
-                    return nullptr;
-                }
-            }
-
-            if(mismatch) {
-                LOG_ERROR("Attachments are of different sizes!");
-                return nullptr;
-            }
-        } else {
-            // colorAttachments.size() == 0, depthStencil != nullptr
-            width = depthStencil->getWidth();
-            height = depthStencil->getHeight();
-        }
-        fboCache.emplace_back(colorAttachments, depthStencil, width, height);
-        return &fboCache.back();
-    }
-
-    void setRenderTarget(const std::vector<const RenderAttachment*>& colorAttachments,
-                         const RenderAttachment* depthStencil, bool blitCurrent) {
-        flush();
-
-        // default is backbuffer
-        GLuint fbo = 0;
-        glm::ivec4 vp = viewport;
-
-        if(colorAttachments.size() > 0 || depthStencil != nullptr) {
-            fboCacheEntry* entry = getFboCacheEntry(colorAttachments, depthStencil);
-            if(!entry) {
-                entry = addFboCacheEntry(colorAttachments, depthStencil);
-                LOG_DEBUG("Created FBO %d\n", entry->fbo);
-            }
-            if(entry) {
-                fbo = entry->fbo;
-                vp = glm::ivec4(0, 0, entry->width, entry->height);
-            } else {
-                return;
-            }
-        }
-
-        if(blitCurrent) {
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-            // current fbo (bound to GL_FRAMEBUFFER) is still bound to GL_READ_FRAMEBUFFER
-            glBlitFramebuffer(vp.x, vp.y, vp.z, vp.w,
-                              vp.x, vp.y, vp.z, vp.w,
-                              GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
-                              GL_NEAREST);
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glViewport(vp.x, vp.y, vp.z, vp.w);
-    }
+    bool currentSrgbEnabled = false;
 
     void clear(const glm::vec4& color, int colorAttachmentIndex) {
         glClearBufferfv(GL_COLOR, colorAttachmentIndex, glm::value_ptr(color));
@@ -207,6 +31,21 @@ namespace kaun {
 
     void setViewport(const glm::ivec4& vp) {
         setViewport(vp.x, vp.y, vp.z, vp.w);
+    }
+
+    void setSrgbEnabled(bool enabled) {
+        if(enabled != currentSrgbEnabled) {
+            if(enabled) {
+                glEnable(GL_FRAMEBUFFER_SRGB);
+            } else {
+                glDisable(GL_FRAMEBUFFER_SRGB);
+            }
+            currentSrgbEnabled = enabled;
+        }
+    }
+
+    bool getSrgbEnabled() {
+        return currentSrgbEnabled;
     }
 
     glm::mat4 projectionMatrix;
@@ -348,18 +187,19 @@ namespace kaun {
         renderQueue.clear();
 
         #ifndef NDEBUG
-            checkGLError();
+            checkGlError();
         #endif
     }
 
     void ensureGlState() {
+        RenderTarget::ensureGlState();
         RenderState::ensureGlState();
         Shader::ensureGlState();
         Texture::ensureGlState();
         Mesh::ensureGlState();
     }
 
-    void checkGLError() {
+    void checkGlError() {
         GLenum err = glGetError();
         if(err != GL_NO_ERROR) {
             std::string text("Unknown error");

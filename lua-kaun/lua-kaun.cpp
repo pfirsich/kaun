@@ -1089,6 +1089,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("clear", clear)
         .addCFunction("clearDepth", clearDepth)
         .addFunction("setViewport", (void(*)(int, int, int, int))&kaun::setViewport)
+        .addFunction("setWindowDimensions", kaun::setWindowDimensions)
         .addCFunction("setProjection", setProjection)
         .addCFunction("getProjection", getProjection)
         .addFunction("setViewTransform", setViewTransform)

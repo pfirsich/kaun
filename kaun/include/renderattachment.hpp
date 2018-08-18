@@ -39,7 +39,11 @@ namespace kaun {
         virtual int getWidth() const = 0;
         virtual int getHeight() const = 0;
         virtual size_t getSamples() const = 0;
+
         glm::ivec2 getDimensions() const { return glm::ivec2(getWidth(), getHeight()); }
+        bool hasDepth() const;
+        bool hasStencil() const;
+        GLbitfield getClearMask() const;
     };
 
     class RenderBuffer : public RenderAttachment {

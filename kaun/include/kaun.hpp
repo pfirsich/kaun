@@ -6,6 +6,7 @@
 #include "log.hpp"
 #include "signal.hpp"
 #include "render.hpp"
+#include "rendertarget.hpp"
 #include "transform.hpp"
 #include "aabb.hpp"
 #include "mesh.hpp"

@@ -48,8 +48,7 @@ namespace kaun {
 
         // This should do nothing for non-srgb render targets, so I think it's fine
         // to unconditionally enable this with no control about it otherwise.
-        // Disable this for now, because of: https://devtalk.nvidia.com/default/board/69/opengl/
-        //glEnable(GL_FRAMEBUFFER_SRGB);
+        setSrgbEnabled(true);
 
         // This should not do anything for non-multisamples rendertargets, so the same applies here
         // It might be useful though to render geometry without msaa to msaa render targets, but
@@ -71,6 +70,9 @@ namespace kaun {
                 glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, true);
             }
         #endif
+
+        RenderTarget::currentRead = RenderTarget::Window::instance();
+        RenderTarget::currentDraw = RenderTarget::Window::instance();
 
         defaultVertexFormat
             .add(kaun::AttributeType::POSITION, 3, kaun::AttributeDataType::F32)

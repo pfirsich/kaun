@@ -13,6 +13,7 @@ end
 
 function love.run()
     local width, height, flags = love.window.getMode()
+    kaun.setWindowDimensions(width, height)
     love.resize(width, height)
     assert(flags.depth > 0, "Window needs a depth buffer! Add 't.window.depth = 24' to conf.lua.")
 

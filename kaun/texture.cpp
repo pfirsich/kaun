@@ -3,6 +3,7 @@
 
 #include "texture.hpp"
 #include "utility.hpp"
+#include "render.hpp"
 
 namespace kaun {
     const Texture* Texture::currentBoundTextures[Texture::MAX_UNITS] = {nullptr};
@@ -64,6 +65,9 @@ namespace kaun {
         glTexParameteri(target, GL_TEXTURE_MIN_FILTER, static_cast<GLenum>(mMinFilter));
     }
 
+    const GLint channelsToInternalFormat[4] = {GL_R8, GL_RG8, GL_RGB8, GL_RGBA8};
+    const GLint channelsToInternalFormatSrgb[4] = {GL_R8, GL_RG8, GL_SRGB8, GL_SRGB8_ALPHA8};
+
     void Texture::loadFromMemory(const uint8_t* buffer, int width, int height, int components, bool genMipmaps, Target target, bool replace) {
         assert(components >= 1 && components <= 4);
         if(target == Target::NONE) target = mTarget;
@@ -71,7 +75,7 @@ namespace kaun {
         if(mTextureObject == 0) glGenTextures(1, &mTextureObject);
         bind(0);
 
-        GLint internalFormatMap[4] = {GL_R8, GL_RG8, GL_RGB8, GL_RGBA8};
+        const GLint* internalFormatMap = getSrgbEnabled() ? channelsToInternalFormatSrgb : channelsToInternalFormat;
         GLint internalFormat = internalFormatMap[components-1];
         GLint formatMap[4] = {GL_RED, GL_RG, GL_RGB, GL_RGBA};
         GLint format = formatMap[components-1];

@@ -3,7 +3,7 @@
 
 void resize(int w, int h) {
     kaun::setProjection(glm::perspective(glm::radians(45.0f), static_cast<float>(w)/h, 0.1f, 100.0f));
-    kaun::setViewport(0, 0, w, h);
+    kaun::setWindowDimensions(w, h);
 }
 
 int main(int argc, char** argv) {

@@ -1,6 +1,27 @@
 #include "renderattachment.hpp"
 
 namespace kaun {
+    bool RenderAttachment::hasDepth() const {
+        PixelFormat fmt = getPixelFormat();
+        return fmt == PixelFormat::DEPTH16 || fmt == PixelFormat::DEPTH24
+            || fmt == PixelFormat::DEPTH32F || fmt == PixelFormat::DEPTH32F_STENCIL8
+            || fmt == PixelFormat::DEPTH24_STENCIL8;
+    }
+
+    bool RenderAttachment::hasStencil() const {
+        PixelFormat fmt = getPixelFormat();
+        return fmt == PixelFormat::DEPTH32F_STENCIL8 || fmt == PixelFormat::DEPTH24_STENCIL8
+            || fmt == PixelFormat::STENCIL8;
+    }
+
+    GLbitfield RenderAttachment::getClearMask() const {
+        if(hasDepth() || hasStencil()) {
+            return (hasDepth() ? GL_DEPTH_BUFFER_BIT : 0) | (hasStencil() ? GL_STENCIL_BUFFER_BIT : 0);
+        } else {
+            return GL_COLOR_BUFFER_BIT;
+        }
+    }
+
     RenderBuffer::RenderBuffer(PixelFormat format, int width, int height, size_t samples) :
             mRbo(0), mPixelFormat(format), mWidth(width), mHeight(height), mSamples(samples) {
         glGenRenderbuffers(1, &mRbo);
