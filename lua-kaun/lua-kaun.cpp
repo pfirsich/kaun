@@ -973,6 +973,19 @@ void flush() {
     kaun::flush();
 }
 
+int gammaToLinear(lua_State* L) {
+    int nargs = lua_gettop(L);
+    if(nargs >= 4) return luaL_error(L, "Number of arguments to gammaToLinear has to be 1, 2, 3 or 4");
+    for(int i = 1; i <= nargs; ++i) {
+        if(i < 4) {
+            lua_pushnumber(L, kaun::gammaToLinear(luax_check<float>(L, i)));
+        } else {
+            lua_pushnumber(L, luax_check<float>(L, i));
+        }
+    }
+    return nargs;
+}
+
 LoveGlState loveState;
 
 // As it is now, we only do a bunch of glGet in endLoveGraphics,
@@ -1101,6 +1114,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("setRenderTarget", setRenderTarget)
         .addCFunction("draw", draw)
         .addFunction("flush", flush)
+        .addCFunction("gammaToLinear", gammaToLinear)
 
         .addFunction("beginLoveGraphics", beginLoveGraphics)
         .addFunction("endLoveGraphics", endLoveGraphics)

@@ -80,4 +80,22 @@ namespace kaun {
         return static_cast<int>(col.r * 255) <<  0 | static_cast<int>(col.g * 255) <<  8
              | static_cast<int>(col.b * 255) << 16 | static_cast<int>(col.a * 255) << 24;
     }
+
+    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+    // should I care about values outside of [0, 1] here?
+    inline float gammaToLinear(float v) {
+        return v <= 0.04045f ? v * 0.0773993f : std::pow((v + 0.055f) * 0.9478673f, 2.4f);
+    }
+
+    inline float linearToSRGB(float v) {
+        return v < 0.0031308f ? v * 12.92f : 1.055f * std::pow(v, 0.41667f) - 0.055f;
+    }
+
+    inline glm::vec3 gammaToLinear(const glm::vec3& v) {
+        return glm::vec3(gammaToLinear(v.r), gammaToLinear(v.g), gammaToLinear(v.b));
+    }
+
+    inline glm::vec4 gammaToLinear(const glm::vec4& v) {
+        return glm::vec4(gammaToLinear(glm::vec3(v)), v.a);
+    }
 }
