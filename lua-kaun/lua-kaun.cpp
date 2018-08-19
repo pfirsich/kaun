@@ -909,6 +909,9 @@ int draw(lua_State* L) {
                 } else {
                     if(uniformInfo.exists()) {
                         switch(uniformInfo.getType()) {
+                            case kaun::UniformInfo::UniformType::BOOL:
+                                uniforms.emplace_back(name, luax_check<bool>(L, -1));
+                                break;
                             case kaun::UniformInfo::UniformType::INT:
                                 uniforms.emplace_back(name, luaL_checkint(L, -1));
                                 break;

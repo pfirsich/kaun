@@ -8,6 +8,7 @@ namespace kaun {
     class Uniform {
     public:
         enum class Type {
+            BOOL,
             FLOAT, VEC2F, VEC3F, VEC4F,
             INT, VEC2I, VEC3I, VEC4I,
             UINT, VEC2UI, VEC3UI, VEC4UI,
@@ -25,6 +26,7 @@ namespace kaun {
 
         int getTypeSize() { // in bytes
             switch(mType) {
+                case Type::BOOL: return 4;
                 case Type::FLOAT: return 4;
                 case Type::VEC2F: return 4*2;
                 case Type::VEC3F: return 4*3;
@@ -58,6 +60,13 @@ namespace kaun {
             mData = DataPtr(temp);
         }
 
+        void copyBools(const bool* data, size_t num) {
+            uint8_t* temp = new uint8_t[num*4];
+            for(size_t i = 0; i < num; ++i) 
+                reinterpret_cast<uint32_t*>(temp)[i] = data[i] ? 1 : 0;
+            mData = DataPtr(temp);
+        }
+
         template <typename T>
         const T* getData() const {
             return reinterpret_cast<const T*>(std::get<DataPtr>(mData).get());
@@ -67,6 +76,9 @@ namespace kaun {
         // Uniform will copy the data on construction
         // since the data is "safe" there, the copy constructor will just copy the pointer.
         Uniform(const Uniform& other) = default;
+
+        Uniform(const std::string& name, bool val) :
+            mName(name), mType(Type::BOOL), mCount(1) { copyBools(&val, 1); }
 
         Uniform(const std::string& name, int val) :
             mName(name), mType(Type::INT), mCount(1) { copyData(&val); }
@@ -151,6 +163,8 @@ namespace kaun {
         void set(Shader::UniformLocation loc) const {
             int c = mCount;
             switch(mType) {
+                case Type::BOOL:
+                    glUniform1iv(loc, c, getData<int>()); break;
                 case Type::FLOAT:
                     glUniform1fv(loc, c, getData<float>()); break;
                 case Type::VEC2F:
