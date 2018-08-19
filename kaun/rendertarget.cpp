@@ -161,14 +161,18 @@ namespace kaun {
         createFbo();
     }
 
+    void RenderTarget::setViewport() const {
+        kaun::setViewport(0, 0, getWidth(), getHeight());
+    }
+
     void RenderTarget::bind(bool read, bool draw) const {
         GLenum target = GL_FRAMEBUFFER; // assume (read && write)
         if(read && !draw) target = GL_READ_FRAMEBUFFER;
         if(draw && !read) target = GL_DRAW_FRAMEBUFFER;
         glBindFramebuffer(target, mFbo);
         if(draw) {
-            setViewport(0, 0, getWidth(), getHeight());
             RenderTarget::currentDraw = this;
+            setViewport();
         }
         if(read) {
             RenderTarget::currentRead = this;

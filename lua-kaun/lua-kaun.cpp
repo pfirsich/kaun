@@ -1017,7 +1017,7 @@ void beginLoveEventPump() {
 
 void endLoveEventPump() {
     saveLoveViewportState(loveState);
-    kaun::setViewport();
+    kaun::RenderTarget::currentDraw->setViewport();
 }
 
 extern "C" EXPORT int luaopen_kaun(lua_State* L) {
@@ -1126,14 +1126,18 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
 
         .endNamespace();
 
-    kaun::init(true);
+    if(!kaun::initGl()) {
+        luaL_error(L, "Could not initialize OpenGL");
+    }
 
+    // save it before kaun::init, because it might change gl state
     loveState = saveLoveGlState();
+
+    kaun::init();
 
     if(luaL_dostring(L, kaunLua)) {
         luaL_error(L, "Error: %s", lua_tostring(L, -1));
     }
-    // make love.graphics untouchable?
 
     lb::push(L, lb::getGlobal(L, "kaun"));
     return 1;

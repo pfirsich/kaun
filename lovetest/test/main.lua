@@ -1,58 +1,11 @@
-local kaun = require("kaun")
-local shaders = require("shaders")
-
-local cameraTrafo = kaun.newTransform()
-cameraTrafo:lookAtPos(0, 0, 4,   0, 0, -1)
-kaun.setViewTransform(cameraTrafo)
-
-local shader = kaun.newShader(shaders.frag, shaders.vert)
-
-local mesh = kaun.newBoxMesh(1, 1, 1)
-local meshTrafo1 = kaun.newTransform()
-local meshTrafo2 = kaun.newTransform()
-meshTrafo2:setPosition(1, 0, -1)
-
---local texture = kaun.newCheckerTexture(512, 512, 64)
-local texture = kaun.newTexture("crate.png")
-
-kaun.beginLoveGraphics()
-local loveTex = love.graphics.newImage("crate.png")
-kaun.endLoveGraphics()
-
-function love.resize(w, h)
-    kaun.setProjection(45, w/h, 0.1, 100.0)
-    kaun.setViewport(0, 0, w, h)
+local loaded = false
+local function load(name)
+    if loaded then error("Only load one example at a time, please!") end
+    love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. (";%s/?.lua"):format(name))
+    require(name .. ".main")
 end
 
-function love.update(dt)
-    meshTrafo1:rotate(dt, 0, 1, 0)
-    meshTrafo2:rotate(dt, 0, 1, 0)
-end
-
-function love.draw()
-    kaun.clear()
-    kaun.clearDepth()
-
-    kaun.setModelTransform(meshTrafo2)
-    kaun.draw(mesh, shader, {
-        color = {1, 0, 1, 1},
-        baseTexture = texture,
-    })
-
-    kaun.setModelTransform(meshTrafo1)
-    kaun.draw(mesh, shader, {
-        color = {1, 1, 1, 1},
-        baseTexture = texture,
-    })
-
-    kaun.beginLoveGraphics() -- calls kaun.flush
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.draw(loveTex, 0, 0, 0, 0.7)
-    love.graphics.setColor(1, 0, 0)
-    love.graphics.rectangle("fill", 0, 0, 200, 200)
-    love.graphics.setColor(0, 0, 0)
-    love.graphics.print("FPS: " .. love.timer.getFPS(), 5, 5)
-    -- all draws have to finish in this block! flush batches!
-    love.graphics.flushBatch()
-    kaun.endLoveGraphics()
-end
+--load("spinny_box")
+load("island_scene")
+--load("love_graphics_interop")
+--load("fullscreen_quad")

@@ -37,14 +37,8 @@ namespace kaun {
         LOG_DEBUG("GL Debug message - source: %s, type: %s, severity: %s, message: %s", debugSourceName[source], debugTypeName[type], debugSeverityName[severity], message);
     }
 
-    void init(bool loadGl) {
+    void init() {
         setupDefaultLogging();
-
-        if(loadGl) {
-            if(!gladLoadGL()) {
-                LOG_CRITICAL("Failed to initialize GLAD!");
-            }
-        }
 
         // This should do nothing for non-srgb render targets, so I think it's fine
         // to unconditionally enable this with no control about it otherwise.
@@ -71,12 +65,16 @@ namespace kaun {
             }
         #endif
 
-        RenderTarget::currentRead = RenderTarget::Window::instance();
-        RenderTarget::currentDraw = RenderTarget::Window::instance();
+        // make sure the currently bound rendertargets are set and the viewport is saved 
+        RenderTarget::Window::instance()->bind(true, true);
 
         defaultVertexFormat
             .add(kaun::AttributeType::POSITION, 3, kaun::AttributeDataType::F32)
             .add(kaun::AttributeType::NORMAL, 3, kaun::AttributeDataType::F32)
             .add(kaun::AttributeType::TEXCOORD0, 2, kaun::AttributeDataType::F32);
+    }
+
+    bool initGl() {
+        return gladLoadGL();
     }
 }

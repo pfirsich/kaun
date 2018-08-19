@@ -33,6 +33,7 @@ namespace kaun {
         glm::ivec2 getDimensions() const { return glm::ivec2(getWidth(), getHeight()); }
         GLbitfield getClearMask() const { return mClearMask; }
 
+        void setViewport() const;
         void bind(bool read = true, bool draw = true) const;
 
     protected:

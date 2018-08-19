@@ -1,27 +1,3 @@
-local shaders = {}
-
-shaders.frag = [[
-in VSOUT {
-    vec2 texCoord;
-    vec3 normal;
-    vec3 worldPos;
-    vec3 eye;
-} vsOut;
-
-out vec4 fragColor;
-
-uniform sampler2D baseTexture;
-uniform vec4 color;
-
-void main() {
-    float NdotL = max(0.0, dot(vsOut.normal, normalize(vsOut.eye)));
-    //fragColor = vec4(0.0, 0.0, 1.0, 1.0);
-    //fragColor = vec4(color.rgb * NdotL, color.a);
-    fragColor = vec4(color.rgb * NdotL * texture(baseTexture, vsOut.texCoord).rgb, color.a);
-}
-]]
-
-shaders.vert = [[
 out VSOUT {
     vec2 texCoord;
     vec3 normal;
@@ -40,6 +16,3 @@ void main() {
     vsOut.eye = vec3(-kaun_modelView * vec4(attrPosition, 1.0));
     gl_Position = kaun_modelViewProjection * vec4(attrPosition, 1.0);
 }
-]]
-
-return shaders

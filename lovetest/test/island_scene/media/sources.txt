@@ -1,0 +1,3 @@
+sand.png: https://opengameart.org/content/seamless-beach-sand - cropped to half size
+skybox: https://opengameart.org/content/clouds-skybox-1 - converted to png
+palm trees: https://opengameart.org/content/palms-pack

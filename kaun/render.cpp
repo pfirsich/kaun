@@ -34,14 +34,12 @@ namespace kaun {
     }
 
     void setSrgbEnabled(bool enabled) {
-        if(enabled != currentSrgbEnabled) {
-            if(enabled) {
-                glEnable(GL_FRAMEBUFFER_SRGB);
-            } else {
-                glDisable(GL_FRAMEBUFFER_SRGB);
-            }
-            currentSrgbEnabled = enabled;
+        if(enabled) {
+            glEnable(GL_FRAMEBUFFER_SRGB);
+        } else {
+            glDisable(GL_FRAMEBUFFER_SRGB);
         }
+        currentSrgbEnabled = enabled;
     }
 
     bool getSrgbEnabled() {
@@ -192,6 +190,7 @@ namespace kaun {
     }
 
     void ensureGlState() {
+        setSrgbEnabled(getSrgbEnabled());
         RenderTarget::ensureGlState();
         RenderState::ensureGlState();
         Shader::ensureGlState();

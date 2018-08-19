@@ -1,4 +1,18 @@
-# Unpack love in this folder and put kaun.dll next to it.
-*
-!.gitignore
-!test/*
+# RenderDoc capture config
+rdoc.cap
+
+# love
+love.exe
+lovec.exe
+love.dll
+lua51.dll
+mpg123.dll
+msvcp120.dll
+msvcr120.dll
+OpenAL32.dll
+SDL2.dll
+
+# kaun
+kaun.dll
+kaun.ilk
+SDL2d.dll

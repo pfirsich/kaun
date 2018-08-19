@@ -19,6 +19,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace kaun {
-    extern void init(bool loadGl = false);
+    extern bool initGl();
+    extern void init();
     extern void ensureGlState();
 }
