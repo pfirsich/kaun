@@ -166,20 +166,20 @@ end
 local function rotateBlock()
     local oldGrid = curBlock.grid
     curBlock.grid = rotatedGrid(curBlock.grid, 1)
-    -- check if it fits, if not, move left and right
-    if not checkBlock() then
-        curBlock.offset[1] = curBlock.offset[1] - 1
-        if not checkBlock() then
-            curBlock.offset[1] = curBlock.offset[1] + 2
-            if not checkBlock() then
-                -- restore everything
-                curBlock.offset[1] = curBlock.offset[1] - 1
-                curBlock.grid = oldGrid
-                return false
+    -- check if it fits, if not, wiggle left and right to see if it fits
+    local startOffset = curBlock.offset[1]
+    for dx = 0, 2 do -- how much we wiggle (I know this checks dx = 0 twice, but I don't mind)
+        for dir = -1, 1, 2 do -- wiggle direction
+            curBlock.offset[1] = startOffset + dir * dx
+            if checkBlock() then
+                return true
             end
         end
     end
-    return true
+    -- nothing fits => undo everything (just don't do any rotation)
+    curBlock.offset[1] = startOffset
+    curBlock.grid = oldGrid
+    return false
 end
 
 function love.keypressed(key)
