@@ -6,6 +6,7 @@ local function load(name)
 end
 
 --load("spinny_box")
-load("island_scene")
+--load("island_scene")
 --load("love_graphics_interop")
 --load("fullscreen_quad")
+load("tetris")
