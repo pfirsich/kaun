@@ -23,7 +23,7 @@ local blockColors = {
     J = {0.0, 0.0, 1.0, 1.0},
     L = {1.0, 0.5, 0.25, 1.0},
 }
-borderColor = {0.2, 0.2, 0.2, 1.0}
+local borderColor = {0.2, 0.2, 0.2, 1.0}
 
 -- these describe square regions, the center of which is the rotation pivot point
 local blockLayout = {
