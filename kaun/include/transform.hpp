@@ -98,5 +98,13 @@ namespace kaun {
         void lookAt(const glm::vec3& at, const glm::vec3& up = glm::vec3(0.0f, 1.0f, 0.0f)) {
             lookAtPos(mPosition, at, up);
         }
+
+        Transform& operator=(const Transform& other) {
+            mPosition = other.mPosition;
+            mScale = other.mScale;
+            mQuaternion = other.mQuaternion;
+            mMatrixDirty = true;
+            return *this;
+        }
     };
 }

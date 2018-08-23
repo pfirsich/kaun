@@ -141,6 +141,13 @@ struct TransformWrapper : public kaun::Transform {
         return 4;
     }
 
+    int set(lua_State* L) {
+        TransformWrapper* other = lb::Userdata::get<TransformWrapper>(L, 2, true);
+        assert(other);
+        Transform::operator=(*other);
+        return 0;
+    }
+
     static TransformWrapper newTransform() {
         return TransformWrapper();
     }
@@ -1041,6 +1048,7 @@ extern "C" EXPORT int luaopen_kaun(lua_State* L) {
         .addCFunction("getQuaternion", &TransformWrapper::getQuaternion)
         .addFunction("setScale", &TransformWrapper::setScale)
         .addCFunction("getScale", &TransformWrapper::getScale)
+        .addCFunction("set", &TransformWrapper::set)
         .endClass()
         .addFunction("newTransform", TransformWrapper::newTransform)
 
