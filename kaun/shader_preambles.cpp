@@ -1,11 +1,11 @@
-#include <string>
+#include <string_view>
 
 #include "shader.hpp"
 
 // Gamma Correction Helpers are from https://bitbucket.org/rude/love (wrap_Graphics.lua)
 // and  http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
 
-std::string kaun::Shader::globalShaderPreamble = R"(#version 330 core
+std::string_view kaun::Shader::globalShaderPreamble = R"(#version 330 core
 
 // Attribute Indices
 #define KAUN_ATTR_POSITION    0
@@ -79,17 +79,17 @@ mediump vec4 linearToGammaFast(mediump vec4 c) { return vec4(linearToGammaFast(c
 #define linearToGamma linearToGammaFast
 )";
 
-std::string kaun::Shader::fragmentShaderPreamble = R"(
+std::string_view kaun::Shader::fragmentShaderPreamble = R"(
 #define FRAGMENT
 #line 1
 )";
 
-std::string kaun::Shader::vertexShaderPreamble = R"(
+std::string_view kaun::Shader::vertexShaderPreamble = R"(
 #define VERTEX
 #line 1
 )";
 
-std::string kaun::Shader::geometryShaderPreamble = R"(
+std::string_view kaun::Shader::geometryShaderPreamble = R"(
 #define GEOMETRY
 #line 1
 )";
