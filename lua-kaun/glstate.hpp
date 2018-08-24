@@ -75,8 +75,8 @@ struct LoveGlState {
     // glStencilFunc, glStencilOp, glStencilMask
 };
 
-extern LoveGlState saveLoveGlState();
-extern void restoreLoveGlState(const LoveGlState& state);
+LoveGlState saveLoveGlState();
+void restoreLoveGlState(const LoveGlState& state);
 
-extern void saveLoveViewportState(LoveGlState& state);
-extern void restoreLoveViewportState(const LoveGlState& state);
+void saveLoveViewportState(LoveGlState& state);
+void restoreLoveViewportState(const LoveGlState& state);

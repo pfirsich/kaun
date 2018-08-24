@@ -23,16 +23,16 @@ namespace kaun {
     };
 
     // returns success
-    extern bool setupWindow(const char* title, int width, int height,
-                            const WindowProperties& props = WindowProperties());
-    extern int getWindowWidth();
-    extern int getWindowHeight();
-    extern glm::ivec2 getWindowSize();
-    extern void update();
-    extern void swapBuffers();
-    extern void updateAndSwap();
-    extern void cleanup();
-    extern float getTime();
+    bool setupWindow(const char* title, int width, int height,
+                     const WindowProperties& props = WindowProperties());
+    int getWindowWidth();
+    int getWindowHeight();
+    glm::ivec2 getWindowSize();
+    void update();
+    void swapBuffers();
+    void updateAndSwap();
+    void cleanup();
+    float getTime();
     // glm::ivec2 getWindowSize()
     // getSdlWindowHandl, getSdlGlContext
     // saveScreenshot

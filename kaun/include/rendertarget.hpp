@@ -68,7 +68,7 @@ namespace kaun {
         }
     };
 
-    extern void setWindowDimensions(int width, int height);
+    void setWindowDimensions(int width, int height);
 
     RenderTarget* setRenderTarget(const std::vector<const RenderAttachment*>& colorAttachments,
                                   const RenderAttachment* depthStencil, bool blitCurrent);

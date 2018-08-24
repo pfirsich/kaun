@@ -14,7 +14,7 @@ namespace kaun {
         glm::quat mQuaternion;
         mutable glm::mat4 mMatrix;
 
-        inline virtual void dirty() {mMatrixDirty = true;}
+        inline virtual void dirty() { mMatrixDirty = true; }
 
         void updateTRSFromMatrix();
 

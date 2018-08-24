@@ -11,12 +11,12 @@ namespace kaun {
 
         AABoundingBox() : min(0.0f, 0.0f, 0.0f), max(0.0f, 0.0f, 0.0f) {}
 
-        inline void fitPoint(const glm::vec3& point) {
+        void fitPoint(const glm::vec3& point) {
             min = glm::min(min, point);
             max = glm::max(max, point);
         }
 
-        inline void fitAABB(const AABoundingBox& other) {
+        void fitAABB(const AABoundingBox& other) {
             if(other.empty()) return;
             if(empty()) {
                 min = other.min;
@@ -28,7 +28,7 @@ namespace kaun {
         }
 
         //http://zeuxcg.org/2010/10/17/aabb-from-obb-with-component-wise-abs/
-        inline void transform(const glm::mat4& mat) {
+        void transform(const glm::mat4& mat) {
             glm::vec3 center = (min + max) / 2.0f;
             glm::vec3 extent = (max - min) / 2.0f;
 
@@ -40,15 +40,15 @@ namespace kaun {
             max = center + extent;
         }
 
-        inline bool pointInside(const glm::vec3& point) const {
+        bool pointInside(const glm::vec3& point) const {
             return glm::all(glm::greaterThanEqual(point, min)) && glm::all(glm::lessThanEqual(point, max));
         }
 
-        inline bool overlaps(const AABoundingBox& other) const {
+        bool overlaps(const AABoundingBox& other) const {
             return glm::all(glm::lessThanEqual(min, other.max)) && glm::all(glm::lessThanEqual(other.min, max));
         }
 
-        inline bool empty() const {
+        bool empty() const {
             return glm::length(max - min) < 1e-6;
         }
     };

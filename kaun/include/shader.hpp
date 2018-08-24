@@ -83,7 +83,7 @@ namespace kaun {
 
         const UniformInfo& getUniformInfo(const std::string& name) const;
 
-        inline void bind() const {
+        void bind() const {
             if(currentShaderProgram != this) {
                 if(mProgramObject > 0) {
                     glUseProgram(mProgramObject);

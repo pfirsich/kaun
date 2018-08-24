@@ -80,7 +80,7 @@ LoveGlState saveLoveGlState() {
     return state;
 }
 
-extern void saveLoveViewportState(LoveGlState& state) {
+void saveLoveViewportState(LoveGlState& state) {
     glGetIntegerv(GL_VIEWPORT, state.viewport);
     glGetIntegerv(GL_SCISSOR_BOX, state.scissorBox);
 }
@@ -144,7 +144,7 @@ void restoreLoveGlState(const LoveGlState& state) {
                         state.blendSrcAlpha, state.blendDstAlpha);
 }
 
-extern void restoreLoveViewportState(const LoveGlState& state) {
+void restoreLoveViewportState(const LoveGlState& state) {
     glViewport(state.viewport[0], state.viewport[1], state.viewport[2], state.viewport[3]);
     glScissor(state.scissorBox[0], state.scissorBox[1], state.scissorBox[2], state.scissorBox[3]);
 }
