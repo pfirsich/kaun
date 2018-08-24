@@ -34,6 +34,7 @@ namespace kaun {
     class RenderAttachment {
     public:
         virtual void attach(GLenum attachmentPoint) const = 0;
+        virtual ~RenderAttachment() = default;
 
         virtual PixelFormat getPixelFormat() const = 0;
         virtual int getWidth() const = 0;
