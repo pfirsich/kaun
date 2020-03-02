@@ -612,7 +612,12 @@ struct RenderStateWrapper : public kaun::RenderState {
     }
 
     static int newRenderState(lua_State* L) {
-        RenderStateWrapper* state = new RenderStateWrapper;
+        RenderStateWrapper* state;
+        if(lua_gettop(L) > 0) {
+            state = new RenderStateWrapper(*lb::Userdata::get<RenderStateWrapper>(L, 1, true));
+        } else {
+            state = new RenderStateWrapper();
+        }
         pushWithGC(L, state);
         return 1;
     }
@@ -717,6 +722,12 @@ struct TextureWrapper : public kaun::Texture {
             luaL_error(L, "Could not load file %s", path);
             return 0;
         }
+    }
+
+    static int newPixelTexture(lua_State* L) {
+        glm::vec4 col = luax_check<glm::vec4>(L, 1);
+        pushWithGC(L, reinterpret_cast<TextureWrapper*>(kaun::Texture::pixel(col)));
+        return 1;
     }
 
     static int newRenderTexture(lua_State* L) {

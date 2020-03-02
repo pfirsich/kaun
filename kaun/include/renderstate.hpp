@@ -79,6 +79,8 @@ namespace kaun {
                         mFrontFace(FaceOrientation::CCW), mBlendEnabled(false), mBlendSrcFactor(BlendFactor::ONE),
                         mBlendDstFactor(BlendFactor::ZERO), mBlendEquation(BlendEq::ADD) {}
 
+        RenderState(const RenderState& other) = default;
+
         bool getDepthWrite() const { return mDepthWrite; }
         void setDepthWrite(bool write) { mDepthWrite = write; }
 
