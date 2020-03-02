@@ -3,27 +3,21 @@
 
 GLint maxTextureUnits = -1;
 
-GLenum textureTargets[numTextureTargets] = {
-    GL_TEXTURE_2D,
-    GL_TEXTURE_3D,
-    GL_TEXTURE_2D_ARRAY,
-    GL_TEXTURE_CUBE_MAP
-};
+GLenum textureTargets[numTextureTargets]
+    = { GL_TEXTURE_2D, GL_TEXTURE_3D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_CUBE_MAP };
 
-GLenum getTextureTargets[numTextureTargets] = {
-    GL_TEXTURE_BINDING_2D,
-    GL_TEXTURE_BINDING_3D,
-    GL_TEXTURE_BINDING_2D_ARRAY,
-    GL_TEXTURE_BINDING_CUBE_MAP
-};
+GLenum getTextureTargets[numTextureTargets] = { GL_TEXTURE_BINDING_2D, GL_TEXTURE_BINDING_3D,
+    GL_TEXTURE_BINDING_2D_ARRAY, GL_TEXTURE_BINDING_CUBE_MAP };
 
-GLint glGetInteger(GLenum pname) {
+GLint glGetInteger(GLenum pname)
+{
     GLint val;
     glGetIntegerv(pname, &val);
     return val;
 }
 
-LoveGlState saveLoveGlState() {
+LoveGlState saveLoveGlState()
+{
     LoveGlState state;
 
     state.vertexArrayBinding = glGetInteger(GL_VERTEX_ARRAY_BINDING);
@@ -33,19 +27,21 @@ LoveGlState saveLoveGlState() {
 
     glGetVertexAttribfv(3, GL_CURRENT_VERTEX_ATTRIB, state.constantColorVertexAttrib);
 
-    if(maxTextureUnits < 0) maxTextureUnits = glGetInteger(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+    if (maxTextureUnits < 0)
+        maxTextureUnits = glGetInteger(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS);
     // This is purely an optimization and may go very wrong
-    if(maxTextureUnits > 8) maxTextureUnits = 8;
+    if (maxTextureUnits > 8)
+        maxTextureUnits = 8;
 
     state.activeTexture = glGetInteger(GL_ACTIVE_TEXTURE);
 
-    for(int t = 0; t < numTextureTargets; ++t) {
+    for (int t = 0; t < numTextureTargets; ++t) {
         state.boundTextures[t].resize(maxTextureUnits, 0);
     }
 
-    for(int u = 0; u < maxTextureUnits; ++u) {
+    for (int u = 0; u < maxTextureUnits; ++u) {
         glActiveTexture(GL_TEXTURE0 + u);
-        for(int t = 0; t < numTextureTargets; ++t) {
+        for (int t = 0; t < numTextureTargets; ++t) {
             state.boundTextures[t][u] = glGetInteger(getTextureTargets[t]);
         }
     }
@@ -80,30 +76,34 @@ LoveGlState saveLoveGlState() {
     return state;
 }
 
-void saveLoveViewportState(LoveGlState& state) {
+void saveLoveViewportState(LoveGlState& state)
+{
     glGetIntegerv(GL_VIEWPORT, state.viewport);
     glGetIntegerv(GL_SCISSOR_BOX, state.scissorBox);
 }
 
-void glSetEnabled(GLenum cap, GLboolean state) {
-    if(state == GL_TRUE) {
+void glSetEnabled(GLenum cap, GLboolean state)
+{
+    if (state == GL_TRUE) {
         glEnable(cap);
     } else {
         glDisable(cap);
     }
 }
 
-bool checkErrors(const char* after) {
+bool checkErrors(const char* after)
+{
     GLenum err;
     bool anyErrors = false;
-    while((err = glGetError()) != GL_NO_ERROR) {
+    while ((err = glGetError()) != GL_NO_ERROR) {
         std::printf("GL Error after %s: 0x%X\n", after, err);
         anyErrors = true;
     }
     return anyErrors;
 }
 
-void restoreLoveGlState(const LoveGlState& state) {
+void restoreLoveGlState(const LoveGlState& state)
+{
     glBindVertexArray(state.vertexArrayBinding);
 
     glBindBuffer(GL_ARRAY_BUFFER, state.arrayBufferBinding);
@@ -111,9 +111,9 @@ void restoreLoveGlState(const LoveGlState& state) {
 
     glVertexAttrib4fv(3, state.constantColorVertexAttrib);
 
-    for(int u = 0; u < maxTextureUnits; ++u) {
+    for (int u = 0; u < maxTextureUnits; ++u) {
         glActiveTexture(GL_TEXTURE0 + u);
-        for(int t = 0; t < numTextureTargets; ++t) {
+        for (int t = 0; t < numTextureTargets; ++t) {
             glBindTexture(textureTargets[t], state.boundTextures[t][u]);
         }
     }
@@ -140,11 +140,12 @@ void restoreLoveGlState(const LoveGlState& state) {
     glUseProgram(state.program);
 
     glBlendEquationSeparate(state.blendEquationRgb, state.blendEquationAlpha);
-    glBlendFuncSeparate(state.blendSrcRgb, state.blendDstRgb,
-                        state.blendSrcAlpha, state.blendDstAlpha);
+    glBlendFuncSeparate(
+        state.blendSrcRgb, state.blendDstRgb, state.blendSrcAlpha, state.blendDstAlpha);
 }
 
-void restoreLoveViewportState(const LoveGlState& state) {
+void restoreLoveViewportState(const LoveGlState& state)
+{
     glViewport(state.viewport[0], state.viewport[1], state.viewport[2], state.viewport[3]);
     glScissor(state.scissorBox[0], state.scissorBox[1], state.scissorBox[2], state.scissorBox[3]);
 }
