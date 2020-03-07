@@ -21,6 +21,10 @@ std::unordered_map<GLenum, const char*> debugSeverityName
     = { { GL_DEBUG_SEVERITY_HIGH, "high" }, { GL_DEBUG_SEVERITY_MEDIUM, "medium" },
           { GL_DEBUG_SEVERITY_LOW, "low" }, { GL_DEBUG_SEVERITY_NOTIFICATION, "notification" } };
 
+#if !_MSC_VER
+#define __stdcall
+#endif
+
 void __stdcall debugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
     const GLchar* message, const void* userParam)
 {

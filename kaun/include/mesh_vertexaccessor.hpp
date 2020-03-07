@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "log.hpp"
 #include "mesh_buffers.hpp"
 #include "mesh_vertexformat.hpp"
 

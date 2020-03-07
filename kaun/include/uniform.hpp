@@ -400,7 +400,11 @@ public:
             break;
         case Type::TEXTURE: {
             int unit = getTexture()->getUnit();
-            assert(unit >= 0);
+            // If the texture is not bound (-1 is returned) either we did something wrong (we should
+            // assert) or it couldn't be loaded. The latter case is sensible, so we set the sampler
+            // to 0.
+            if (unit < 0)
+                unit = 0;
             glUniform1i(loc, unit);
             break;
         }

@@ -8,7 +8,9 @@ function _kaun.getFileData(path)
     if not f then
         error(err)
     end
-    return f:getPointer(), f:getSize()
+    -- TODO: getPointer will be deprecated soon. Return tostring(f:getFFIPointer()) instead
+    -- return FileData so it's on the Lua stack and won't be garbage collected
+    return f, f:getPointer(), f:getSize()
 end
 
 function love.run()

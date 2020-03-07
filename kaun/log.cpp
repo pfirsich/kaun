@@ -11,10 +11,11 @@
 #include "log.hpp"
 
 namespace kaun {
-const char* levelNameMap[5] = { "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL" };
+const std::vector<std::string> levelNameMap { "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL" };
 
 std::vector<std::unique_ptr<LoggingHandler>> loggingHandlers;
-std::string loggingFormat("[{y}.{m}.{d} {H}:{M}:{S}] [{filename}:{line}] {levelname} - {message}");
+const std::string loggingFormat(
+    "[{y}.{m}.{d} {H}:{M}:{S}] [{filename}:{line}] {levelname} - {message}");
 
 void setupDefaultLogging()
 {
@@ -71,7 +72,11 @@ std::tm* localtime(std::time_t* t)
 {
     // Is this sane?
     static std::tm tm;
+#ifdef _MSC_VER
     localtime_s(&tm, t);
+#else
+    localtime_r(t, &tm);
+#endif
     return &tm;
 }
 
@@ -79,7 +84,8 @@ void log(LogLevel level, const char* filename, int line, const char* format, ...
 {
     std::unordered_map<std::string, std::string> formatArguments;
     unsigned intLevel = static_cast<unsigned>(level);
-    formatArguments["levelname"] = intLevel < 5 ? levelNameMap[intLevel] : std::to_string(intLevel);
+    formatArguments["levelname"]
+        = intLevel < levelNameMap.size() ? levelNameMap[intLevel] : std::to_string(intLevel);
     formatArguments["filename"] = filename;
     formatArguments["line"] = std::to_string(line);
 
@@ -92,20 +98,20 @@ void log(LogLevel level, const char* filename, int line, const char* format, ...
     formatArguments["M"] = std::to_string(tm->tm_min);
     formatArguments["S"] = std::to_string(tm->tm_sec);
 
-    std::string message;
-    message = format;
     va_list args;
     va_start(args, format);
+    va_list argsCopy; // It's modified by vsnprintf, so we need a copy to get the length
+    va_copy(argsCopy, args);
     // This might be slow
     // +1 for null-termination
-    int len = vsnprintf(nullptr, 0, format, args) + 1;
-    char* buffer = new char[len];
-    vsnprintf(buffer, len, format, args);
+    const int len = vsnprintf(nullptr, 0, format, argsCopy) + 1;
+    va_end(argsCopy);
+    const auto buffer = std::make_unique<char[]>(len);
+    vsnprintf(buffer.get(), len, format, args);
     va_end(args);
-    formatArguments["message"] = buffer;
-    delete[] buffer;
+    formatArguments["message"] = buffer.get();
 
-    std::string logLine = formatString(loggingFormat, formatArguments);
+    const std::string logLine = formatString(loggingFormat, formatArguments);
 
     for (auto& handler : loggingHandlers) {
         if (static_cast<unsigned>(level) >= static_cast<unsigned>(handler->getLogLevel())) {

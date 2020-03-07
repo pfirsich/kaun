@@ -1,5 +1,8 @@
 #pragma once
 
+#include <istream>
+#include <streambuf>
+
 #include <expected.hpp>
 #include <glm/glm.hpp>
 
@@ -12,7 +15,11 @@ struct ErrorTuple {
         : errorCode(code)
     {
         char buf[256];
+#if _POSIX_C_SOURCE >= 200112L
+        strerror_r(code, buf, sizeof(buf));
+#else
         strerror_s(buf, sizeof(buf), code);
+#endif
         errorMessage = buf;
     }
 
@@ -45,6 +52,16 @@ public:
         rdbuf(&mBuffer);
     }
 };
+
+std::string toHexStream(const uint8_t* data, size_t size);
+
+template <typename... Args>
+std::string sprintfFmt(const char* fmt, Args&&... args)
+{
+    char buf[256];
+    snprintf(buf, sizeof(buf), fmt, std::forward<Args>(args)...);
+    return buf;
+}
 
 // http://insanecoding.blogspot.com/2011/11/how-to-read-in-file-in-c.html
 tl::expected<std::string, ErrorTuple> readFile(const std::string& filename);

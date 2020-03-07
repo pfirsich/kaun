@@ -1,3 +1,7 @@
+#include <string>
+
+using namespace std::string_literals;
+
 extern "C" {
 #include <lauxlib.h>
 #include <lua.h>
@@ -11,11 +15,15 @@ namespace lb = luabridge;
 #include "glstate.hpp"
 #include "luax.hpp"
 
-static const char kaunLua[] =
+const char* kaunLua =
 #include "kaun.lua"
     ;
 
+#if WIN32
 #define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
 
 template <typename T>
 int __gc(lua_State* L)
@@ -36,18 +44,22 @@ void pushWithGC(lua_State* L, T* obj)
     lua_pop(L, 1); // pop metatable
 }
 
+// BEWARE: THIS FUNCTION WILL LEAVE THE LÖVE FileData OBJECT ON THE STACK. POP IT WHEN YOU ARE DONE
 std::pair<const uint8_t*, int> getFileData(lua_State* L, const char* filename)
 {
     lua_getglobal(L, "_kaun");
     lua_pushstring(L, "getFileData");
     lua_rawget(L, -2);
+    lua_remove(L, lua_gettop(L) - 1); // pop _kaun table
     lua_pushstring(L, filename);
-    if (lua_pcall(L, 1, 2, 0)) {
+    if (lua_pcall(L, 1, 3, 0)) {
         luaL_error(L, "Could not get file data: %s", lua_tostring(L, -1));
         return std::make_pair(nullptr, 0);
     } else {
-        const uint8_t* fileData = reinterpret_cast<uint8_t*>(lua_touserdata(L, -2));
-        int fileSize = luaL_checkint(L, -1);
+        const int fileSize = luaL_checkint(L, -1);
+        luaL_checktype(L, -2, LUA_TLIGHTUSERDATA);
+        const auto fileData = reinterpret_cast<const uint8_t*>(lua_touserdata(L, -2));
+        lua_pop(L, 2);
         return std::make_pair(fileData, fileSize);
     }
 }
@@ -413,10 +425,10 @@ struct MeshWrapper : public kaun::Mesh {
         if (lua_gettop(L) >= 2)
             format = lb::Userdata::get<VertexFormatWrapper>(L, 2, true);
         auto fileData = getFileData(L, path);
-        if (fileData.first != nullptr) {
-            pushWithGC(L,
-                reinterpret_cast<MeshWrapper*>(
-                    Mesh::objFile(fileData.first, fileData.second, *format)));
+        if (fileData.first) {
+            auto mesh = Mesh::objFile(fileData.first, fileData.second, *format);
+            lua_pop(L, 1); // Pop the FileData
+            pushWithGC(L, reinterpret_cast<MeshWrapper*>(mesh));
             return 1;
         } else {
             luaL_error(L, "Could not load file %s", path);
@@ -841,9 +853,11 @@ struct TextureWrapper : public kaun::Texture {
     {
         const char* path = luaL_checklstring(L, 1, nullptr);
         auto fileData = getFileData(L, path);
-        if (fileData.first != nullptr) {
+
+        if (fileData.first) {
             TextureWrapper* texture = new TextureWrapper;
             texture->loadEncodedFromMemory(fileData.first, fileData.second, false);
+            lua_pop(L, 1); // Pop the FileData
             pushWithGC(L, texture);
             return 1;
         } else {
@@ -886,11 +900,12 @@ struct TextureWrapper : public kaun::Texture {
         for (int i = 0; i < 6; ++i) {
             const char* path = luaL_checkstring(L, i + 1);
             auto fileData = getFileData(L, path);
-            if (fileData.first != nullptr) {
+            if (fileData.first) {
                 // this line sucks
-                Texture::Target target = static_cast<Texture::Target>(
+                const Texture::Target target = static_cast<Texture::Target>(
                     static_cast<GLenum>(Texture::Target::TEX_CUBE_MAP_POS_X) + i);
                 texture->loadEncodedFromMemory(fileData.first, fileData.second, false, target);
+                lua_pop(L, 1); // Pop the FileData
             } else {
                 return luaL_error(L, "Could not load file %s", path);
             }

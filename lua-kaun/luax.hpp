@@ -1,3 +1,15 @@
+enum class LuaType {
+    NIL = LUA_TNIL,
+    NUMBER = LUA_TNUMBER,
+    BOOLEAN = LUA_TBOOLEAN,
+    STRING = LUA_TSTRING,
+    TABLE = LUA_TTABLE,
+    FUNCTION = LUA_TFUNCTION,
+    USERDATA = LUA_TUSERDATA,
+    THREAD = LUA_TTHREAD,
+    LIGHTUSERDATA = LUA_TLIGHTUSERDATA,
+};
+
 template <typename T>
 class LuaEnum {
 private:
@@ -186,4 +198,40 @@ int luax_pushmat4(lua_State* L, const glm::mat4& mat)
     for (int i = 0; i < 16; ++i)
         lua_pushnumber(L, mat[i / 4][i % 4]);
     return 16;
+}
+
+std::string luax_debugStackElement(lua_State* L, int idx)
+{
+    const auto type = static_cast<LuaType>(lua_type(L, idx));
+    switch (type) {
+    case LuaType::NIL:
+        return "nil"s;
+    case LuaType::NUMBER:
+        return "number: " + std::to_string(lua_tonumber(L, idx));
+    case LuaType::BOOLEAN:
+        return "boolean: " + std::to_string(lua_toboolean(L, idx) > 0);
+    case LuaType::STRING:
+        return "string: "s + lua_tostring(L, idx);
+    case LuaType::TABLE:
+        return "table: "s + kaun::sprintfFmt("%p", lua_topointer(L, idx));
+    case LuaType::FUNCTION:
+        return "function: "s + kaun::sprintfFmt("%p", lua_topointer(L, idx));
+    case LuaType::USERDATA:
+        return "userdata: "s + kaun::sprintfFmt("%p", lua_touserdata(L, idx));
+    case LuaType::THREAD:
+        return "thread: "s + kaun::sprintfFmt("%p", lua_topointer(L, idx));
+    case LuaType::LIGHTUSERDATA:
+        return "lightuserdata: "s + kaun::sprintfFmt("%p", lua_touserdata(L, idx));
+    default:
+        return "unknown"s;
+    }
+}
+
+void luax_printStack(lua_State* L)
+{
+    const int count = lua_gettop(L);
+    LOG_DEBUG("%d elements on the stack", count);
+    for (int i = 1; i <= count; ++i) {
+        LOG_DEBUG("stack element %d: %s", i, luax_debugStackElement(L, i).c_str());
+    }
 }

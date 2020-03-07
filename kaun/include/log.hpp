@@ -35,7 +35,7 @@ enum class LogLevel : unsigned {
     LVL_CRITICAL = 4
 };
 
-extern const char* levelNameMap[5];
+extern const std::vector<std::string> levelNameMap;
 
 class LoggingHandler {
 private:
@@ -96,7 +96,7 @@ public:
 };
 
 extern std::vector<std::unique_ptr<LoggingHandler>> loggingHandlers;
-extern std::string loggingFormat;
+extern const std::string loggingFormat;
 
 void setupDefaultLogging();
 

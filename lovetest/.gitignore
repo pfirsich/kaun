@@ -16,3 +16,4 @@ SDL2.dll
 kaun.dll
 kaun.ilk
 SDL2d.dll
+*.so

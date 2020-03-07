@@ -1,8 +1,13 @@
 #define STB_IMAGE_IMPLEMENTATION
+#define STBI_FAILURE_USERMSG
+// We need this, because löve has it's own version of it with PNG disabled.
+// If we didn't have it, we would call the functions in liblove instead.
+#define STB_IMAGE_STATIC
 #include <stb_image.h>
 
-#include "render.hpp"
 #include "texture.hpp"
+
+#include "render.hpp"
 #include "utility.hpp"
 
 namespace kaun {
@@ -117,9 +122,9 @@ bool Texture::loadEncodedFromMemory(
     const uint8_t* encBuffer, int len, bool genMipmaps, Target target)
 {
     int w, h, c;
-    unsigned char* buf = stbi_load_from_memory(encBuffer, len, &w, &h, &c, 0);
-    if (buf == 0) {
-        LOG_ERROR("Image could not be loaded from memory.");
+    const unsigned char* buf = stbi_load_from_memory(encBuffer, len, &w, &h, &c, 0);
+    if (!buf) {
+        LOG_ERROR("Image could not be loaded from memory: %s", stbi_failure_reason());
         return false;
     }
     loadFromMemory(buf, w, h, c, genMipmaps, target);
@@ -131,8 +136,9 @@ bool Texture::loadFromFile(const std::string& filename, bool genMipmaps, Target 
 {
     int w, h, c;
     unsigned char* buf = stbi_load(filename.c_str(), &w, &h, &c, 0);
-    if (buf == 0) {
-        LOG_ERROR("Image file '%s' could not be loaded.\n", filename);
+    if (!buf) {
+        LOG_ERROR(
+            "Image file '%s' could not be loaded: %s", filename.c_str(), stbi_failure_reason());
         return false;
     }
     loadFromMemory(buf, w, h, c, genMipmaps, target);

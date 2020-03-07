@@ -1,5 +1,7 @@
 #include "mesh_buffers.hpp"
+
 #include <cassert>
+#include <cstring>
 
 #include "log.hpp"
 
@@ -22,11 +24,11 @@ void GLBuffer::upload()
 
 void VertexBuffer::reallocate(size_t numVertices, bool copyOld)
 {
-    size_t newSize = mVertexFormat.getStride() * numVertices;
-    std::unique_ptr<VBODataType[]> newData(new VBODataType[newSize]);
-    if (mData.get() != nullptr && copyOld)
-        memcpy(newData.get(), mData.get(), mSize);
-    mData.reset(newData.release());
+    const size_t newSize = mVertexFormat.getStride() * numVertices;
+    auto newData = std::make_unique<VBODataType[]>(newSize);
+    if (mData && copyOld)
+        ::memcpy(newData.get(), mData.get(), mSize);
+    mData = std::move(newData);
     mNumVertices = numVertices;
     mSize = newSize;
 }
@@ -60,11 +62,11 @@ IndexBufferType getIndexBufferType(size_t vertexCount)
 
 void IndexBuffer::reallocate(size_t numIndices, bool copyOld)
 {
-    size_t newSize = getIndexBufferTypeSize(mDataType) * numIndices;
-    std::unique_ptr<VBODataType[]> newData(new VBODataType[newSize]);
-    if (mData.get() != nullptr && copyOld)
+    const size_t newSize = getIndexBufferTypeSize(mDataType) * numIndices;
+    auto newData = std::make_unique<VBODataType[]>(newSize);
+    if (mData && copyOld)
         memcpy(newData.get(), mData.get(), mSize);
-    mData.reset(newData.release());
+    mData = std::move(newData);
     mNumIndices = numIndices;
     mSize = newSize;
 }

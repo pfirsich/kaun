@@ -56,3 +56,7 @@ function love.draw()
     kaun.flush()
 end
 ```
+
+Videos of the other Examples:
+* [Island Scene](https://streamable.com/bkrr3)
+* [Tetris](https://streamable.com/r424g)
